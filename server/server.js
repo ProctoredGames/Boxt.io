@@ -13,18 +13,22 @@ var io = socketIO(server);
 app.use(express.static(publicPath));
 
 var players = [];
+var plants = [];
 
-server.listen(port, function(){
-	//we are saying that the function that we are passing into listen prints the statement below
+server.listen(port, function(){//when the server starts, generate tha map with this function
+	var plant = {};
+	for(var i = 0; i< (mapSize/100); i++){
+		plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+200, true);
+		plants.push(plant);
+	}
 	console.log("Server Started on port "+ port +"!");
 });
 
 io.on('connection', function(socket) {
     console.log('someone conencted, Id: ' + socket.id);
     var player = {};
-    var flowers = {};
     
-    socket.on("imReady", (data) => {
+    socket.on("imReady", (data) => { //player joins
         player = new Player(socket.id, data.name,  Math.random() * mapSize,0, 100);
         players.push(player);
 
@@ -32,12 +36,12 @@ io.on('connection', function(socket) {
         socket.broadcast.emit('newPlayer', player.getInitPack());
 
         socket.emit("initPack", {initPack: getAllPlayersInitPack()});
+        socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
     });
 
     socket.on("inputData", (data) => {
         player.mouseX = data.mouseX;
         player.mouseY = data.mouseY;
-        player.size += data.sizeChange;
         player.angle = data.angle;
         player.distXToMouse = data.distXToMouse;
         player.isFlipped = data.isFlipped;
@@ -45,14 +49,36 @@ io.on('connection', function(socket) {
         player.windowHeight = data.windowHeight;
     })
 
+    // socket.on("requestData", (data) => {
+    //     player.xp += data.xpChange;
+    //     // plants[data.plantIndex].hasFlower = data.hasFlower;
+    // })
+
     socket.on("commandData", (data) => {
     	player.size += data.sizeChange;
     	player.speed += data.speedChange;
+    	
+    	if(data.setAbility){
+    		player.ability = data.ability;
+    		switch(player.ability){
+    		case "Roll":
+    			player.abilityTimer = 40;
+    			break;
+    		case "Hide":
+    			player.abilityTimer = 120;
+    			break;
+    		default:
+    			console.log("Ability doesnt exist");
+    			player.abilityTimer = 10;
+    			break;
+    		}
+    		player.doingAbility = true;
+    		player.bodyAngle = 0;
+    	}
     })
 
     socket.on("disconnect", () => {
         io.emit('someoneLeft', {id: socket.id});
-
 
         players = players.filter((element) => element.id !== socket.id);
     });
@@ -63,7 +89,7 @@ io.on('connection', function(socket) {
 var upperLegBound = 0.025;
 var lowerLegBound = -0.075;
 
-var detectionRange = 0.6; //mouse moves player when it is greater than 60% of the player size
+var detectionRange = 0.4; //mouse moves player when it is greater than 60% of the player size
 var mapSize = 6000;
 
 var Player = function(id, name, x, y, size){
@@ -71,6 +97,14 @@ var Player = function(id, name, x, y, size){
 	this.name = "";
 	this.x = x;
 	this.y = y;
+
+	this.doingAbility = false;
+	this.abilityTimer = 100;
+	this.ability;
+	this.bodyAngle = 0;
+
+	this.xp = 0;
+	this.upgrade = 1; //player on first upgrade
 	this.size = size;
 	this.speed = 1;
 	this.velY = 0;
@@ -88,8 +122,46 @@ var Player = function(id, name, x, y, size){
 	this.windowWidth;
 	this.windowHeight;
 
-	this.update = function(){
-		//server sided so inspect cant hack it
+	this.handleXp = function(){
+		var headX;
+		var headY;
+		var range;
+		if(!this.isFlipped){
+    		headX = this.x+this.size*0.6;
+    	} else{
+    		headX = this.x-this.size*0.6;
+    	}
+    	headY = this.y-this.size*0.35;
+    	range = this.size*0.2;
+
+		for(var i in plants){
+			if(Math.sqrt(Math.pow(headX-plants[i].flower.x,2)+Math.pow(headY-plants[i].flower.y,2))< (range+plants[i].flower.size/2)){
+				if(plants[i].hasFlower){
+					plants[i].hasFlower = false;
+					this.xp+= plants[i].flower.xp;
+					sendPlantUpdate();
+				} 
+			}
+		}
+		
+		if(this.xp>(this.upgrade*100)){
+			if(this.upgrade === 1){
+				console.log("get ability"+this.xp);
+			} else if(this.upgrade === 2){
+				console.log("first ability upgrade"+this.xp);
+			} else if(this.upgrade === 2){
+				console.log("last ability upgrade"+this.xp);
+			} else if(this.upgrade === 3){
+				console.log("Grow Turtle"+this.xp);
+        		this.upgrade = 1;
+        		this.size+=10;
+        	}
+        	this.upgrade++;
+        	this.xp = this.xp-((this.upgrade-1)*100);
+        }
+	}
+
+	this.animateLegs = function(){
 		this.legOffsetX+=this.speed*this.legDirX;
 		if(this.speed*this.doMovement === 0){
 			this.legOffsetX = 0;
@@ -106,13 +178,50 @@ var Player = function(id, name, x, y, size){
 			this.legDirX = 1;
 			this.frontLegUp = !this.frontLegUp;
 		}
+	}
 
-    	if(this.distXToMouse<this.size*detectionRange){
+	this.playAbility = function(){
+		switch(this.ability){
+		case "Roll":
+			this.doMovement = false;
+			this.bodyAngle+= (this.speed*6)/100;
+			if (!(this.isFlipped)) {
+				if(this.x < mapSize){
+					this.x += this.speed*6;
+				}else{
+					this.doingAbility = false;
+				}
+			} else{
+				if(this.x > 0){
+					this.x -= this.speed*6;
+				}else{
+					this.doingAbility = false;
+				}
+			}
+			break;
+		case "Hide":
+			this.doMovement = false;
+			break;
+		default:
+			break;
+		}
+		this.abilityTimer -= 1;
+		if(this.abilityTimer <= 0){
+			this.doingAbility = false;
+		}
+	}
+
+	this.update = function(){
+		if(this.distXToMouse<this.size*detectionRange){
 			this.doMovement = false;
 		} else{
 			this.doMovement = true;
 		}
-
+    	this.handleXp();
+		this.animateLegs();
+		if(this.doingAbility){
+			this.playAbility(); //this can overwrite anything
+		}
 		if(this.doMovement){
 			if (!(this.isFlipped)) {
 				if(this.x < mapSize){
@@ -125,6 +234,7 @@ var Player = function(id, name, x, y, size){
 			}
 		}
 	}
+
 	this.getInitPack = function () { //base information that can be updated
 		return {
 			id: this.id,
@@ -134,11 +244,14 @@ var Player = function(id, name, x, y, size){
 			size: this.size,
 		}
 	}
+
 	this.getUpdatePack = function () {
         return {
             id: this.id,
             x: this.x,
             y: this.y,
+            xp: this.xp,
+            upgrade: this.upgrade,
             size: this.size,
             doMovement: this.doMovement,
             legOffsetX: this.legOffsetX,
@@ -146,6 +259,9 @@ var Player = function(id, name, x, y, size){
             isFlipped: this.isFlipped,
             shellType: this.shellType,
             angle: this.angle,
+            bodyAngle : this.bodyAngle,
+            doingAbility: this.doingAbility,
+            ability: this.ability,
         }
     }
     
@@ -171,11 +287,28 @@ setInterval(() => {
     io.emit("updatePack", {updatePack});
 }, 1000/35)
 
-var Plant = function(x, height){
+var Plant = function(id, x, height, hasFlower){
+	this.id = id;
 	this.x = x;
 	this.height = height;
 	this.hasFlower = true;
 	this.flower = new Flower(x, -height);
+
+	this.getInitPack = function () { //base information that can be updated
+		return {
+			id: this.id,
+			x: this.x,
+			height: this.height,
+			hasFlower: this.hasFlower,
+		}
+	}
+	this.getUpdatePack = function () { //base information that can be updated
+		return {
+			id: this.id,
+			hasFlower: this.hasFlower,
+
+		}
+	}
 	return this;
 }
 
@@ -193,4 +326,23 @@ var Leaf = function(x, y, isFlipped){
 	this.isFlipped = isFlipped;
 	this.size = 100;
 	return this;
+}
+
+function getAllPlantsInitPack() {
+    var plantInitPack = [];
+    for(var i in plants) {
+        plantInitPack.push(plants[i].getInitPack());
+    }
+    return plantInitPack;
+}
+
+function sendPlantUpdate() {
+    var plantUpdatePack = [];
+
+    for(var i in plants) {
+        // plants[i].update();
+        plantUpdatePack.push(plants[i].getUpdatePack());
+    }
+
+    io.emit("plantUpdatePack", {plantUpdatePack});
 }
