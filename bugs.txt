@@ -1,0 +1,3 @@
+hasFlower is updating serverside but is not being updated in client.
+the eat code is all serverside so flowers that have already been eaten cannot be eaten by any player.
+client side .draw always draws flower as hasFlower is not being updated
