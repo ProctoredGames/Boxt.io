@@ -86,6 +86,12 @@ io.on('connection', function(socket) {
 			case "Shockwave":
 				player.abilityTimer = StompTime;
 				break;
+      case "Dash":
+				player.abilityTimer = DashTime;
+				break;
+      case "Charge":
+				player.abilityTimer = ChargeTime;
+				break;
 			default:
 				console.log("Ability doesnt exist");
 				player.abilityTimer = 0;
@@ -144,9 +150,11 @@ var BoxRollTime = 40;
 var DomeRollTime = 40;
 var SpikeRollTime = 10;
 var HideTime = 120;
-var StompTime = 60;
+var StompTime = 5;
 var JumpStompTime = 1;
 var ShockwaveTime = 1;
+var DashTime = 60;
+var ChargeTime = 30;
 
 var BoxRollAngle = (3.14159*1)/BoxRollTime;
 var DomeRollAngle = (3.14159*2)/DomeRollTime;
@@ -159,6 +167,8 @@ var Player = function(id, name, x, y, size){
 	this.name = names[Math.floor(Math.random()*(names.length-1))];
 	this.x = x;
 	this.y = y;
+  
+  this.bumpForce = 0;
 
 	this.doingAbility = false;
 	this.abilityTimer;
@@ -184,7 +194,7 @@ var Player = function(id, name, x, y, size){
 	this.doMovement = true;
 	this.headAngle = 0;
 	this.distXToMouse = 0;
-
+  this
 	this.shellType = "Box";
 
 	this.windowWidth;
@@ -203,12 +213,16 @@ var Player = function(id, name, x, y, size){
 				return (SpikeRollAngle)*this.size;
         break;
       case "Stomp":
-				return this.walkSpeed*3;
+				return this.walkSpeed/2;
         break;
+      case "Dash":
+        return this.walkSpeed*5;
+      case "Charge":
+        return this.walkSpeed*10;
       case "Hide":
         return 0;
         break;
-			default: //if you dont know, assume regular movement
+			default: //if not specified, assume regular movement
 				return this.walkSpeed;
         break;
 			}
@@ -230,7 +244,7 @@ var Player = function(id, name, x, y, size){
 				break;
 			case 2:
 				this.abilityCardsActive = true;
-				this.abilityCards = ["BoxRoll", "Stomp"];
+				this.abilityCards = ["BoxRoll", "Stomp", "Dash"];
 				this.progressXp = this.progressXp-this.targetXp;
 				this.upgrade = 3;
 				this.targetXp += 20;
@@ -244,6 +258,9 @@ var Player = function(id, name, x, y, size){
 					break;
 				case "Stomp":
 					this.abilityCards = ["JumpStomp", "Shockwave"];
+					break;
+        case "Dash":
+          this.abilityCards = ["Charge"];
 					break;
 				default:
 					console.log("ability cannot be upgraded");
@@ -359,7 +376,26 @@ var Player = function(id, name, x, y, size){
         this.bodyAngle += SpikeRollAngle;
         break;
       case "Stomp":
-      	//do nothing, only increases speed for testing
+      	if(this.abilityTimer === StompTime){
+          this.legOffsetX = (upperLegBound*this.size)-(StompTime*this.getSpeed());
+          this.frontLegUp = true;
+          this.legDirX = 1;
+        } else if(this.abilityTimer === 1){
+          this.frontLegUp = false;
+          this.legDirX = -1;
+          for(let t in players){
+            if(players[t].id != this.id){
+              if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(this.size*0.75))){
+                if(players[t].x>this.x){
+                  players[t].bumpForce = this.size/10;
+                }
+                if(players[t].x<this.x){
+                  players[t].bumpForce = -(this.size/10);
+                }
+              }
+            }
+          }
+        }
         break;
       case "JumpStomp":
       	for(let p in plants){ //testing
@@ -376,6 +412,12 @@ var Player = function(id, name, x, y, size){
       		}
       	}
       	break;
+      case "Dash":
+      	//do nothing, only increases speed
+        break;
+      case "Charge":
+      	//do nothing, only increases speed
+        break;
       case "Hide":
         //do nothing
         break;
@@ -409,17 +451,23 @@ var Player = function(id, name, x, y, size){
   }
 
 	this.update = function(){
+    if(this.bumpForce != 0){ //abilities can do this
+      this.bumpForce *= 0.9;
+      if(Math.abs(this.bumpForce)<0.1){
+        this.bumpForce = 0;
+      }
+      this.x+=this.bumpForce;
+    }
 		if(this.distXToMouse<this.size*detectionRange){
 			this.doMovement = false;
 		} else{
 			this.doMovement = true;
 		}
-    	this.handleXp();
-		this.animateLegs();
+    this.handleXp();
 		if(this.doingAbility){
 			this.playAbility(this.whatAbility); //this can overwrite anything
 		}
-    
+    this.animateLegs();
     this.handleCollisions();
     
 		if(this.doMovement){
