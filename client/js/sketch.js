@@ -17,7 +17,7 @@ var turtle, turtleHead, turtleJaw, turtleFoot, turtleTail;
 var stem, leaf, flowerWhite, flowerYellow;
 var HideUI, BoxRollUI, DomeRollUI, SpikeRollUI;
 
-var mapSize = 6000;
+var mapSize = 12000;
 
 //loads assets on start of game
 function preload(){
@@ -32,11 +32,12 @@ function preload(){
 	stem = loadImage('assets/stem.png');
 	leaf = loadImage('assets/leaf.png');
 	flowerWhite = loadImage('assets/flowerWhite.png');
+	flowerYellow = loadImage('assets/flowerYellow.png');
 
-	HideUI = loadImage('assets/turtleHead.png');
-	BoxRollUI = loadImage('assets/shellBox.png');
-	DomeRollUI = loadImage('assets/shellDome.png');
-	SpikeRollUI = loadImage('assets/shellSpike.png');
+	HideUI = loadImage('assets/UI/hideUI.png');
+	BoxRollUI = loadImage('assets/UI/boxRollUI.png');
+	DomeRollUI = loadImage('assets/UI/domeRollUI.png');
+	SpikeRollUI = loadImage('assets/UI/spikeRollUI.png');
 }
 
 //first thing that is called. Sets up everything
@@ -111,6 +112,7 @@ function setup() {
             	if(plants[j].id === data.plantUpdatePack[i].id) {
             		plants[j].hasFlower = data.plantUpdatePack[i].hasFlower;
             		plants[j].hasLeaf = data.plantUpdatePack[i].hasLeaf;
+                // plants[j].leaves = data.plantUpdatePack[i].leaves;
             		// console.log("updated flower state as "+plants[j].hasFlower)
             	}
             }
@@ -140,9 +142,9 @@ function draw(){
         if(players[i].id === myId) {
         	var adjustedX;
         	if(players[i].isFlipped){
-        		adjustedX = ((width/2+players[i].size/3) - players[i].x);
+        		adjustedX = ((width/2+players[i].size/2) - players[i].x);
         	} else{
-        		adjustedX = ((width/2-players[i].size/3) - players[i].x);
+        		adjustedX = ((width/2-players[i].size/2) - players[i].x);
         	}
     		var adjustedY = ((height*0.75+players[i].size/3.5) - players[i].y);
             translate(adjustedX, adjustedY); //zooming in to 1/3 up the player
@@ -165,8 +167,8 @@ function draw(){
     
     for(let i in plants) {
     	if(plants[i].hasFlower){
-			plants[i].flower.draw();
-		}
+			  plants[i].flower.draw();
+		  }
     }
     for(let i in players) {
         players[i].draw();
@@ -183,16 +185,23 @@ function draw(){
     rect(windowHeight*0.02, windowHeight*0.02, windowHeight*0.25, windowHeight*0.3, 20);
     fill(0, 200, 0);
     textSize(17);
-    text("LEADERBOARD", windowHeight*0.06, (windowHeight*0.045), windowHeight*0.25, windowHeight*0.03)
+    textAlign(CENTER);
+    text("LEADERBOARD", windowHeight*0.02, (windowHeight*0.045), windowHeight*0.25, windowHeight*0.03)
     textSize(15);
-    for(let i in players){
-    	if(players[i].id === myId){
+    textAlign(LEFT);
+
+    var rankedPlayers = players;
+    
+    var count = 1;
+    for(let i in rankedPlayers){
+    	if(rankedPlayers[i].id === myId){
       		fill(255, 255, 0);
       	}
-      	text(i + " | " + players[i].name + " : " + Math.round(players[i].xp), windowHeight*0.05, (windowHeight*0.08)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
+      	text(count + " | " + players[i].name + " : " + Math.round(players[i].xp), windowHeight*0.05, (windowHeight*0.08)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
       	if(players[i].id === myId){
       		fill(0, 200, 0);
       	}
+      count ++;
     }
 }
 
@@ -242,6 +251,12 @@ var Player = function(id, name, x, y, size){
 		case "SpikeRoll":
 			img = SpikeRollUI;
 			break;
+		case "Stomp":
+			img = turtleFoot;
+			break;
+		case "ERROR"://testing
+			img = flowerYellow;
+			break;
 		default:
 			console.log("ability image not found");
 			img = flowerWhite;
@@ -253,43 +268,60 @@ var Player = function(id, name, x, y, size){
 	this.drawUI = function(){
 		var adjustedY = ((height*0.75+this.size/3.5) - this.y);
 		var percentage = this.progressXp/this.targetXp;
+		if(percentage > 1.00){//bar cant display over 100%
+			percentage = 1.00
+		}
 		
 		fill(0, 100, 0);
-    	rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2, windowWidth*0.03, 20)
-    	fill(0, 250, 0);
-    	rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2*percentage, windowWidth*0.03, 20)
+	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2, windowWidth*0.03, 20)
+	    fill(0, 250, 0);
+	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2*percentage, windowWidth*0.03, 20)
 
-      
-     	var c = 0; //we need to render ui positions forwards
-    	for (let i = this.abilitySet.length - 1; i >= 0; i--) {
+
+	    var c = 0; //we need to render ui positions forwards
+	    for (let i = this.abilitySet.length - 1; i >= 0; i--) {
     		fill(0, 50, 0);
-    		rect(windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15, windowHeight*0.85+windowHeight*0.025-windowWidth/30,windowWidth/15,windowWidth/15, 5);
+    		rect(windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15, 
+           windowHeight*0.85-windowWidth/30,windowWidth/15,windowWidth/15, 10);
 
-    		//we read ability list backwards
+      		//we read ability list backwards
     		var tileImg;
     		tileImg = this.getAbilityImg(this.abilitySet[i]);
-    		
+
     		image(tileImg, windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), //x
-            	windowHeight*0.85+windowHeight*0.025-windowWidth/30+windowWidth/(15*2),windowWidth/15,windowWidth/15); //y, width height
-        	c++;
-        }
+            windowHeight*0.85,windowWidth/15,windowWidth/15); //y, width height
+      	
+    		fill(0, 255, 0);
+    		textSize(windowWidth/(15*6));
+    		textAlign(CENTER);
+    		text(this.abilitySet[i], windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), 
+           windowHeight*0.85 + windowWidth/40);
+      
+    		c++;
+    	}
 
-        if(this.abilityCardsActive){
-        	var totalMenuWidth = ((this.abilityCards.length-1)*(windowWidth/15)) + ((this.abilityCards.length-2)*(windowWidth/225))
-      		for(let i in this.abilityCards){
-      			fill(0, 50, 0);
-    			rect(windowWidth*0.5-(totalMenuWidth/2) + i*(windowWidth/15+windowWidth/225) - windowWidth/30, 
-    				windowHeight*0.4-windowWidth/30,windowWidth/15,windowWidth/15, 5);
-      			
-      			var cardImg;
-      			cardImg = this.getAbilityImg(this.abilityCards[i]);
+	    if(this.abilityCardsActive){
+	    	var totalMenuWidth = ((this.abilityCards.length)*(windowHeight/7)) + ((this.abilityCards.length-1)*(windowHeight/55));
+	    	for(let i in this.abilityCards){
+	        	fill(0, 50, 0);
+	        	rect(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55), 
+	          windowHeight*0.4-windowHeight/14,windowHeight/7,windowHeight/7, 10);
 
-      			image(cardImg, windowWidth*0.5-(totalMenuWidth/2) + i*(windowWidth/15+windowWidth/225), //x
-            		windowHeight*0.4,windowWidth/15,windowWidth/15); //y, width height
+	        	var cardImg;
+	        	cardImg = this.getAbilityImg(this.abilityCards[i]);
 
-      		}
-      	}
-	}
+	        	image(cardImg, windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, //x
+	              windowHeight*0.4,windowHeight/7,windowHeight/7); //y, width height
+	        
+	        	fill(0, 255, 0);
+	        	textSize(windowHeight/(7*6));
+	        	textAlign(CENTER);
+	    		text(this.abilityCards[i], windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, 
+	             windowHeight*0.4 + windowHeight/18);
+
+	      	}
+	    }
+  	}
 
 	this.draw = function(){
 		var shellImg;
@@ -309,7 +341,8 @@ var Player = function(id, name, x, y, size){
 		}
 
 		push();
-		translate(this.x, this.y);
+	    translate(this.x, this.y);
+	    push();
 		if(!(this.isFlipped)){
 			scale(1, 1)
 		} else{
@@ -342,24 +375,25 @@ var Player = function(id, name, x, y, size){
 		translate(0, -(this.size/2)-(this.size/6));
 		if(this.doingAbility){
 			if(this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll"){
-				translate(0,0+(this.size*0.4));
+				translate(0,0+(this.size*0.3));
 				rotate(this.bodyAngle);
-				image(shellImg, 0, 0, this.size, this.size);
+				image(shellImg, 0, -this.size*0.05, this.size, this.size);
 			} else if(this.whatAbility === "Hide"){
 				translate(0,0+(this.size/6));
+				image(shellImg, 0, 0, this.size, this.size);
+			} else{
 				image(shellImg, 0, 0, this.size, this.size);
 			}
 		} else{
 			image(shellImg, 0, 0, this.size, this.size);
 		}
-		// if(!(this.isFlipped)){
-		// 	scale(-1, 1)
-		// } else{
-		// 	scale(1, 1)
-		// }
-		// scale(-1, 1)
-		// text(this.name, 0, 0, 100, 100);
+    	pop();
 		pop();
+    	translate(0, 0);
+    	fill(0, 255, 0);
+    	textSize(26);
+    	textAlign(CENTER);
+    	text(this.name, 0, -this.size*1.22);
 		pop();
 
 	}
@@ -370,100 +404,98 @@ function keyPressed() {
 	var sizeChange = 0;
 	var speedChange = 0;
 	var resetStats = false;
-
+	
 	var abilitySet;
 	var abilityCardsActive = false;
 	var abilityCards;
 	for(let i in players) {
-        if(players[i].id === myId) {
-        	abilitySet = players[i].abilitySet
-        	abilityCardsActive = players[i].abilityCardsActive
-        	abilityCards = players[i].abilityCards
-        }
-    }
-	var whatAbility;
-	
-	// if(key === "w"){ //testing
-	// 	xpChange = 10;
-	// 	console.log("xp up");
-	// }
-	// if(key === "s"){
-	// 	console.log("xp down");
-	// }
-	// if(key === "q"){
-	// 	speedChange = -1
-	// }
-	// if(key === "e"){
-	// 	speedChange = 1
-	// }
+    	if(players[i].id === myId) {
+      		abilitySet = players[i].abilitySet;
+      		abilityCardsActive = players[i].abilityCardsActive;
+      		abilityCards = players[i].abilityCards;
+    	}
+  	}
+  	var abilityCard;
+  	var whatAbility;
 
-	// if(key === "w" || key === "s" || key === "q" || key === "e"){
-	// 	socket.emit("commandData", {xpChange, speedChange});
-	// }
+  	//all this is client editable... grr...
 
-	if(abilityCardsActive){ //choose card
-		if(key === "1"){
-			if(1 <= abilityCards.length){
-				abilityCard = abilityCards[0];
-				socket.emit("choseCard", {abilityCard});
-			}	
-		}
-		if(key === "2"){
-			if(2 <= abilityCards.length){
-				abilityCard = abilityCards[1];
-				socket.emit("choseCard", {abilityCard});
-			}
-		}
-		if(key === "3"){
-			if(3 <= abilityCards.length){
-				abilityCard = abilityCards[2];
-				socket.emit("choseCard", {abilityCard});
-			}
-		}
-		if(key === "4"){
-			if(4 <= abilityCards.length){
-				abilityCard = abilityCards[3];
-				socket.emit("choseCard", {abilityCard});
-			}
-		}
-		if(key === "5"){
-			if(5 <= abilityCards.length){
-				abilityCard = abilityCards[4];
-				socket.emit("choseCard", {abilityCard});
-			}
-		}
-	} else{ //use ability
-		if(key === "1"){
-			if(1 <= abilitySet.length){
-				whatAbility = abilitySet[0];
-				socket.emit("usedAbility", {whatAbility});
-			}
-		}
-		if(key === "2"){
-			if(2 <= abilitySet.length){
-				whatAbility = abilitySet[1];
-				socket.emit("usedAbility", {whatAbility});
-			}
-		}
-		if(key === "3"){
-			if(3 <= abilitySet.length){
-				whatAbility = abilitySet[2];
-				socket.emit("usedAbility", {whatAbility});
-			}
-		}
-		if(key === "4"){
-			if(4 <= abilitySet.length){
-				whatAbility = abilitySet[3];
-				socket.emit("usedAbility", {whatAbility});
-			}
-		}
-		if(key === "5"){
-			if(5 <= abilitySet.length){
-				whatAbility = abilitySet[4];
-				socket.emit("usedAbility", {whatAbility});
-			}
+	if(key === "1"){
+		if(1 <= abilitySet.length){
+			whatAbility = abilitySet[0];
+			socket.emit("usedAbility", {whatAbility});
 		}
 	}
+	if(key === "2"){
+		if(2 <= abilitySet.length){
+			whatAbility = abilitySet[1];
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "3"){
+		if(3 <= abilitySet.length){
+			whatAbility = abilitySet[2];
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "4"){
+		if(4 <= abilitySet.length){
+			whatAbility = abilitySet[3];
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "5"){
+		if(5 <= abilitySet.length){
+			whatAbility = abilitySet[4];
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "6"){
+		if(6 <= abilitySet.length){
+			whatAbility = abilitySet[5];
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "7"){
+		if(7 <= abilitySet.length){
+			whatAbility = abilitySet[6];
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "8"){
+		if(8 <= abilitySet.length){
+			whatAbility = abilitySet[7];
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "9"){
+		if(9 <= abilitySet.length){
+			whatAbility = abilitySet[8];
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+}
+
+function mouseClicked() {
+  	var abilityCards;
+  	var abilityCardsActive;
+  	for(let i in players) {
+    	if(players[i].id === myId) {
+      	abilityCards = players[i].abilityCards;
+      	abilityCardsActive = players[i].abilityCardsActive;
+		}
+	}
+	var abilityCard;
+	var totalMenuWidth = ((abilityCards.length)*(windowHeight/7)) + ((abilityCards.length-1)*(windowHeight/55));
+	if(abilityCardsActive){
+  		for(let i in abilityCards){
+	    	if(((windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55))<mouseX && mouseX<(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/7) && (windowHeight*0.4-windowHeight/14)<mouseY && mouseY<(windowHeight*0.4-windowHeight/14 + windowHeight/7))){
+	    		abilityCard = abilityCards[i];
+    			socket.emit("choseCard", {abilityCard});
+    			break;
+			}
+  		}
+  	}
 }
 
 function sendInputData() { //client specific p5 stuff that the server cant get
@@ -484,8 +516,7 @@ function sendInputData() { //client specific p5 stuff that the server cant get
 		isFlipped = true;
 	}
 
-
-    socket.emit("inputData", {mouseX, mouseY, headAngle, distXToMouse, isFlipped, windowWidth, windowHeight});
+	socket.emit("inputData", {mouseX, mouseY, headAngle, distXToMouse, isFlipped, windowWidth, windowHeight});
 }
 
 
@@ -516,7 +547,6 @@ var Plant = function(id, x, height, hasFlower, hasLeaf){
 		image(stem, this.x, -this.height/2, 150, this.height);
 	}
 	return this;
-
 }
 
 var Flower = function(x,y){
@@ -552,5 +582,4 @@ var Leaf = function(x, y, isFlipped){
 		pop();
 	}
 	return this;
-
 }
