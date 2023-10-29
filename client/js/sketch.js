@@ -137,73 +137,73 @@ function setup() {
 //called every frame
 function draw(){
 	background(0, 0, 250); // it gets a hex/rgb color
-    sendInputData();
-    push();
-    for(let i in players) {
-        if(players[i].id === myId) {
-        	var adjustedX;
-        	if(players[i].isFlipped){
-        		adjustedX = ((width/2+players[i].size/2) - players[i].x);
-        	} else{
-        		adjustedX = ((width/2-players[i].size/2) - players[i].x);
-        	}
-    		var adjustedY = ((height*0.75+players[i].size/3.5) - players[i].y);
-            translate(adjustedX, adjustedY); //zooming in to 1/3 up the player
-        }
+  sendInputData();
+  push();
+  for(let i in players) {
+    if(players[i].id === myId) {
+      var adjustedX;
+      if(players[i].isFlipped){
+        adjustedX = ((width/2+players[i].size/2) - players[i].x);
+      } else{
+        adjustedX = ((width/2-players[i].size/2) - players[i].x);
+      }
+    var adjustedY = ((height*0.75+players[i].size/3.5) - players[i].y);
+      translate(adjustedX, adjustedY); //zooming in to 1/3 up the player
     }
+  }
 
-    fill(0, 0, 200);
-    rect(0, 0-adjustedY, mapSize, windowHeight);
-    fill(0, 150, 0);
-    rect(0, 0, mapSize, windowHeight-adjustedY);
+  fill(0, 0, 200);
+  rect(0, 0-adjustedY, mapSize, windowHeight);
+  fill(0, 150, 0);
+  rect(0, 0, mapSize, windowHeight-adjustedY);
 
-    for(let i in plants) {
-        plants[i].draw();
-        for(let j in plants[i].leaves){
-			    if(plants[i].hasLeaf[j]){
-				    plants[i].leaves[j].draw();
-			    }
-		    }
+  for(let i in plants) {
+    plants[i].draw();
+    for(let j in plants[i].leaves){
+      if(plants[i].hasLeaf[j]){
+        plants[i].leaves[j].draw();
+      }
     }
+  }
     
-    for(let i in plants) {
-    	if(plants[i].hasFlower){
-			  plants[i].flower.draw();
-		  }
+  for(let i in plants) {
+    if(plants[i].hasFlower){
+      plants[i].flower.draw();
     }
-    for(let i in players) {
-        players[i].draw();
-    }
+  }
+  for(let i in players) {
+      players[i].draw();
+  }
 
-    pop();
+  pop();
 
-    for(let i in players) {
-        if(players[i].id === myId) {
-        	players[i].drawUI();
-        }
-    }
-    fill('rgba(0,0,0, 0.8)');
-    rect(windowHeight*0.02, windowHeight*0.02, windowHeight*0.25, windowHeight*0.3, 20);
-    fill(0, 200, 0);
-    textSize(17);
-    textAlign(CENTER);
-    text("LEADERBOARD", windowHeight*0.02, (windowHeight*0.045), windowHeight*0.25, windowHeight*0.03)
-    textSize(15);
-    textAlign(LEFT);
+  for(let i in players) {
+      if(players[i].id === myId) {
+        players[i].drawUI();
+      }
+  }
+  fill('rgba(0,0,0, 0.8)');
+  rect(windowHeight*0.02, windowHeight*0.02, windowHeight*0.25, windowHeight*0.3, 20);
+  fill(0, 200, 0);
+  textSize(17);
+  textAlign(CENTER);
+  text("LEADERBOARD", windowHeight*0.02, (windowHeight*0.045), windowHeight*0.25, windowHeight*0.03)
+  textSize(15);
+  textAlign(LEFT);
 
-    var rankedPlayers = players;
-    
-    var count = 1;
-    for(let i in rankedPlayers){
-    	if(rankedPlayers[i].id === myId){
-      		fill(255, 255, 0);
-      	}
-      	text(count + " | " + players[i].name + " : " + Math.round(players[i].XP), windowHeight*0.05, (windowHeight*0.08)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
-      	if(players[i].id === myId){
-      		fill(0, 200, 0);
-      	}
-      count ++;
-    }
+  var rankedPlayers = players;
+
+  var count = 1;
+  for(let i in rankedPlayers){
+    if(rankedPlayers[i].id === myId){
+        fill(255, 255, 0);
+      }
+      text(count + " | " + players[i].name + " : " + Math.round(players[i].XP), windowHeight*0.05, (windowHeight*0.08)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
+      if(players[i].id === myId){
+        fill(0, 200, 0);
+      }
+    count ++;
+  }
 }
 
 function windowResized() {
@@ -274,55 +274,55 @@ var Player = function(id, name, x, y, size){
 		}
 		
 		fill(0, 100, 0);
-	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2, windowWidth*0.03, 20)
-	    fill(0, 250, 0);
-	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2*percentage, windowWidth*0.03, 20)
+    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2, windowWidth*0.03, 20)
+    fill(0, 250, 0);
+    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2*percentage, windowWidth*0.03, 20)
 
 
-	    var c = 0; //we need to render ui positions forwards
-	    for (let i = this.abilitySet.length - 1; i >= 0; i--) {
-    		fill(0, 50, 0);
-    		rect(windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15, 
-           windowHeight*0.85-windowWidth/30,windowWidth/15,windowWidth/15, 10);
+    var c = 0; //we need to render ui positions forwards
+    for (let i = this.abilitySet.length - 1; i >= 0; i--) {
+      fill(0, 50, 0);
+      rect(windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15, 
+         windowHeight*0.85-windowWidth/30,windowWidth/15,windowWidth/15, 10);
 
-      		//we read ability list backwards
-    		var tileImg;
-    		tileImg = this.getAbilityImg(this.abilitySet[i]);
+        //we read ability list backwards
+      var tileImg;
+      tileImg = this.getAbilityImg(this.abilitySet[i]);
 
-    		image(tileImg, windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), //x
-            windowHeight*0.85,windowWidth/15,windowWidth/15); //y, width height
-      	
-    		fill(0, 255, 0);
-    		textSize(windowWidth/(15*6));
-    		textAlign(CENTER);
-    		text(this.abilitySet[i], windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), 
-           windowHeight*0.85 + windowWidth/40);
-      
-    		c++;
-    	}
+      image(tileImg, windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), //x
+          windowHeight*0.85,windowWidth/15,windowWidth/15); //y, width height
 
-	    if(this.abilityCardsActive){
-	    	var totalMenuWidth = ((this.abilityCards.length)*(windowHeight/7)) + ((this.abilityCards.length-1)*(windowHeight/55));
-	    	for(let i in this.abilityCards){
-	        	fill(0, 50, 0);
-	        	rect(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55), 
-	          windowHeight*0.4-windowHeight/14,windowHeight/7,windowHeight/7, 10);
+      fill(0, 255, 0);
+      textSize(windowWidth/(15*6));
+      textAlign(CENTER);
+      text(this.abilitySet[i], windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), 
+         windowHeight*0.85 + windowWidth/40);
 
-	        	var cardImg;
-	        	cardImg = this.getAbilityImg(this.abilityCards[i]);
+      c++;
+    }
 
-	        	image(cardImg, windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, //x
-	              windowHeight*0.4,windowHeight/7,windowHeight/7); //y, width height
-	        
-	        	fill(0, 255, 0);
-	        	textSize(windowHeight/(7*6));
-	        	textAlign(CENTER);
-	    		text(this.abilityCards[i], windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, 
-	             windowHeight*0.4 + windowHeight/18);
+    if(this.abilityCardsActive){
+      var totalMenuWidth = ((this.abilityCards.length)*(windowHeight/7)) + ((this.abilityCards.length-1)*(windowHeight/55));
+      for(let i in this.abilityCards){
+        fill(0, 50, 0);
+        rect(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55), 
+        windowHeight*0.4-windowHeight/14,windowHeight/7,windowHeight/7, 10);
 
-	      	}
-	    }
-  	}
+        var cardImg;
+        cardImg = this.getAbilityImg(this.abilityCards[i]);
+
+        image(cardImg, windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, //x
+            windowHeight*0.4,windowHeight/7,windowHeight/7); //y, width height
+
+        fill(0, 255, 0);
+        textSize(windowHeight/(7*6));
+        textAlign(CENTER);
+        text(this.abilityCards[i], windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, 
+             windowHeight*0.4 + windowHeight/18);
+
+      }
+	  }
+  }
 
 	this.draw = function(){
 		var shellImg;
