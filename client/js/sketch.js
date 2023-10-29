@@ -262,8 +262,8 @@ var Player = function(id, name, x, y, size){
 			console.log("ability image not found");
 			img = flowerWhite;
 			break;
-    	}
-    	return img;
+    }
+    return img;
 	}
 
 	this.drawUI = function(){
