@@ -17,6 +17,7 @@ var turtle, turtleHead, turtleJaw, turtleFoot, turtleTail;
 var stem, leaf, flowerWhite, flowerYellow;
 var HideUI, BoxRollUI, DomeRollUI, SpikeRollUI;
 
+//map can be bigger
 var mapSize = 12000;
 
 //loads assets on start of game
@@ -76,9 +77,9 @@ function setup() {
                 if(players[j].id === data.updatePack[i].id) {
                     players[j].x = data.updatePack[i].x;
                     players[j].y = data.updatePack[i].y;
-                    players[j].progressXp = data.updatePack[i].progressXp;
-                    players[j].xp = data.updatePack[i].xp;
-                    players[j].targetXp = data.updatePack[i].targetXp;
+                    players[j].progressXP = data.updatePack[i].progressXP;
+                    players[j].XP = data.updatePack[i].XP;
+                    players[j].targetXP = data.updatePack[i].targetXP;
                     players[j].upgrade = data.updatePack[i].upgrade;
                     players[j].size = data.updatePack[i].size;
                     players[j].doMovement = data.updatePack[i].doMovement;
@@ -197,7 +198,7 @@ function draw(){
     	if(rankedPlayers[i].id === myId){
       		fill(255, 255, 0);
       	}
-      	text(count + " | " + players[i].name + " : " + Math.round(players[i].xp), windowHeight*0.05, (windowHeight*0.08)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
+      	text(count + " | " + players[i].name + " : " + Math.round(players[i].XP), windowHeight*0.05, (windowHeight*0.08)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
       	if(players[i].id === myId){
       		fill(0, 200, 0);
       	}
@@ -215,13 +216,13 @@ var Player = function(id, name, x, y, size){
 	this.x = x;
 	this.y = y;
 	this.size = size;
-	this.progressXp = 0;
-	this.targetXp = 10;
+	this.progressXP = 0;
+	this.targetXP = 10;
 	this.upgrade = 1;
 	this.isFlipped = false;
 	this.headAngle = 0;
 
-	this.xp = 0;
+	this.XP = 0;
 
 	this.doingAbility = false;
 	this.abilitySet = [];
@@ -267,7 +268,7 @@ var Player = function(id, name, x, y, size){
 
 	this.drawUI = function(){
 		var adjustedY = ((height*0.75+this.size/3.5) - this.y);
-		var percentage = this.progressXp/this.targetXp;
+		var percentage = this.progressXP/this.targetXP;
 		if(percentage > 1.00){//bar cant display over 100%
 			percentage = 1.00
 		}
@@ -349,18 +350,30 @@ var Player = function(id, name, x, y, size){
 			scale(-1, 1)
 		}
 		if(!(this.doingAbility && ((this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll") || this.whatAbility === "Hide"))){
-			if(this.doMovement){
-				if(this.frontLegUp){
-					image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
-					image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-				} else{
-					image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-					image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
-				}
-			} else{
-				image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-				image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-			}
+			
+      if(this.doingAbility && (this.whatAbility === "Stomp" || this.whatAbility === "Shockwave")){
+         if(this.frontLegUp){
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+          } else{
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+          }
+      } else{
+        if(this.doMovement){
+          if(this.frontLegUp){
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+          } else{
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+          }
+        } else{
+          image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+          image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+        }
+      }
+      
 			push();
 			translate(this.size*0.55, -(this.size*0.35));
 			if(!(this.isFlipped)){
@@ -409,93 +422,96 @@ function keyPressed() {
 	var abilityCardsActive = false;
 	var abilityCards;
 	for(let i in players) {
-    	if(players[i].id === myId) {
-      		abilitySet = players[i].abilitySet;
-      		abilityCardsActive = players[i].abilityCardsActive;
-      		abilityCards = players[i].abilityCards;
-    	}
-  	}
-  	var abilityCard;
-  	var whatAbility;
+    if(players[i].id === myId) {
+        abilitySet = players[i].abilitySet;
+        abilityCardsActive = players[i].abilityCardsActive;
+        abilityCards = players[i].abilityCards;
+    }
+  }
+  var abilityCard;
+  var whatAbility;
 
-  	//all this is client editable... grr...
 
 	if(key === "1"){
 		if(1 <= abilitySet.length){
-			whatAbility = abilitySet[0];
+			whatAbility = 0; //antihack - use indices instead of ability
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
 	if(key === "2"){
 		if(2 <= abilitySet.length){
-			whatAbility = abilitySet[1];
+			whatAbility = 1;
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
 	if(key === "3"){
 		if(3 <= abilitySet.length){
-			whatAbility = abilitySet[2];
+			whatAbility = 2;
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
 	if(key === "4"){
 		if(4 <= abilitySet.length){
-			whatAbility = abilitySet[3];
+			whatAbility = 3;
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
 	if(key === "5"){
 		if(5 <= abilitySet.length){
-			whatAbility = abilitySet[4];
+			whatAbility = 4;
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
 	if(key === "6"){
 		if(6 <= abilitySet.length){
-			whatAbility = abilitySet[5];
+			whatAbility = 5;
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
 	if(key === "7"){
 		if(7 <= abilitySet.length){
-			whatAbility = abilitySet[6];
+			whatAbility = 6;
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
 	if(key === "8"){
 		if(8 <= abilitySet.length){
-			whatAbility = abilitySet[7];
+			whatAbility = 7;
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
 	if(key === "9"){
 		if(9 <= abilitySet.length){
-			whatAbility = abilitySet[8];
+			whatAbility = 8;
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
 }
 
 function mouseClicked() {
-  	var abilityCards;
-  	var abilityCardsActive;
-  	for(let i in players) {
-    	if(players[i].id === myId) {
-      	abilityCards = players[i].abilityCards;
-      	abilityCardsActive = players[i].abilityCardsActive;
+  var abilityCards;
+  var abilityCardsActive;
+  var abilitySet;
+  for(let i in players) {
+    if(players[i].id === myId) {
+      abilityCards = players[i].abilityCards;
+      abilitySet = players[i].abilitySet;
+      abilityCardsActive = players[i].abilityCardsActive;
 		}
 	}
 	var abilityCard;
 	var totalMenuWidth = ((abilityCards.length)*(windowHeight/7)) + ((abilityCards.length-1)*(windowHeight/55));
+  
 	if(abilityCardsActive){
-  		for(let i in abilityCards){
-	    	if(((windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55))<mouseX && mouseX<(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/7) && (windowHeight*0.4-windowHeight/14)<mouseY && mouseY<(windowHeight*0.4-windowHeight/14 + windowHeight/7))){
-	    		abilityCard = abilityCards[i];
-    			socket.emit("choseCard", {abilityCard});
-    			break;
-			}
-  		}
-  	}
+    for(let i in abilityCards){
+      if(((windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55))<mouseX && mouseX<(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/7) && (windowHeight*0.4-windowHeight/14)<mouseY && mouseY<(windowHeight*0.4-windowHeight/14 + windowHeight/7))){
+        abilityCard = i; //antihack
+        socket.emit("choseCard", {abilityCard});
+        break;
+      }
+    }
+  }
+  
 }
 
 function sendInputData() { //client specific p5 stuff that the server cant get
