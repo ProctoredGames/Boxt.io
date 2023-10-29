@@ -28,7 +28,7 @@ io.on('connection', function(socket) {
     var player = {};
     
     socket.on("imReady", (data) => { //player joins
-        player = new Player(socket.id, data.name,  Math.random() * mapSize,0, 100);
+        player = new Player(socket.id, data.name,  Math.random() * mapSize,0);
         players.push(player);
 
         socket.emit("yourId", {id: player.id});
@@ -49,18 +49,18 @@ io.on('connection', function(socket) {
     })
 
     // socket.on("requestData", (data) => {
-    //     player.progressXp += data.progressXpChange;
+    //     player.progressXP += data.progressXPChange;
     //     // plants[data.plantIndex].hasFlower = data.hasFlower;
     // })
   
     // socket.on("commandData", (data) => {
-    // 	player.xp += data.xpChange;
-    // 	player.progressXp += player.progressXp;
+    // 	player.XP += data.XPChange;
+    // 	player.progressXP += player.progressXP;
     // 	player.speed += data.speedChange;
     // })
 
     socket.on("usedAbility", (data) =>{
-    	player.whatAbility = data.whatAbility;
+    	player.whatAbility = player.abilitySet[data.whatAbility];
 			switch(player.whatAbility){
 			case "BoxRoll":
 				player.abilityTimer = BoxRollTime;
@@ -84,7 +84,7 @@ io.on('connection', function(socket) {
 				player.abilityTimer = JumpStompTime;
 				break;
 			case "Shockwave":
-				player.abilityTimer = StompTime;
+				player.abilityTimer =ShockwaveTime;
 				break;
       case "Dash":
 				player.abilityTimer = DashTime;
@@ -104,23 +104,11 @@ io.on('connection', function(socket) {
     socket.on("choseCard", (data) =>{
     	player.abilityCardsActive = false;
     	if(player.upgrade!=4){
-    		player.abilitySet.push(data.abilityCard);
-    	} else{
-    		player.abilitySet[player.abilitySet.length-1] = data.abilityCard;
-        switch(data.abilityCard){
-        case "BoxRoll":
-          player.shellType = "Box";
-          break;
-        case "DomeRoll":
-          player.shellType = "Box";
-          break;
-        case "SpikeRoll":
-          player.shellType = "Box";
-          break;
-        default:
-          break;
-        } 
+    		player.abilitySet.push(player.abilityCards[data.abilityCard]);
+    	} else{ //upgrade existing ability instead
+    		player.abilitySet[player.abilitySet.length-1] = player.abilityCards[data.abilityCard];
     	}
+      player.abilityCards = []; //stops hacking by making indices worthless after used
     })
 
     socket.on("disconnect", () => {
@@ -151,8 +139,8 @@ var DomeRollTime = 40;
 var SpikeRollTime = 10;
 var HideTime = 120;
 var StompTime = 5;
-var JumpStompTime = 1;
-var ShockwaveTime = 1;
+var JumpStompTime = 1; //testing
+var ShockwaveTime = 10;
 var DashTime = 60;
 var ChargeTime = 30;
 
@@ -160,11 +148,11 @@ var BoxRollAngle = (3.14159*1)/BoxRollTime;
 var DomeRollAngle = (3.14159*2)/DomeRollTime;
 var SpikeRollAngle = (3.14159/2)/SpikeRollTime;
 
-var names = ["bob", "boxt.io", "Noob", ".", "KingOfBoxt"];
+var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
-var Player = function(id, name, x, y, size){
+var Player = function(id, name, x, y){
 	this.id = id;
-	this.name = names[Math.floor(Math.random()*(names.length-1))];
+	this.name = names[Math.floor(Math.random()*(names.length))];
 	this.x = x;
 	this.y = y;
   
@@ -179,11 +167,11 @@ var Player = function(id, name, x, y, size){
 	this.abilityCards = [];
 	this.abilityCardsActive = false;
 
-	this.progressXp = 5;
-	this.xp = this.progressXp;
+	this.progressXP = 5;
+	this.XP = this.progressXP;
 	this.upgrade = 1; //player on first upgrade
-	this.targetXp = 20;
-	this.size = size;
+	this.targetXP = 20;
+	this.size = 120;
 	this.walkSpeed = 1.5;
 	this.velY = 0;
 	this.legOffsetX = 0;
@@ -194,7 +182,6 @@ var Player = function(id, name, x, y, size){
 	this.doMovement = true;
 	this.headAngle = 0;
 	this.distXToMouse = 0;
-  this
 	this.shellType = "Box";
 
 	this.windowWidth;
@@ -215,6 +202,9 @@ var Player = function(id, name, x, y, size){
       case "Stomp":
 				return this.walkSpeed/2;
         break;
+      case "Shockwave":
+				return this.walkSpeed/2;
+        break;
       case "Dash":
         return this.walkSpeed*5;
       case "Charge":
@@ -232,23 +222,24 @@ var Player = function(id, name, x, y, size){
 	}
 
 	this.doUpgrade = function(upgrade){
-		if(!(this.abilityCardsActive === true)){
+    
+		if(!(this.abilityCardsActive)){
 			switch(upgrade){
 			case 1:
 				this.abilityCardsActive = true;
 				this.abilityCards = ["Hide"];
-				this.progressXp = this.progressXp-this.targetXp;
-				this.upgrade = 2;
-				this.targetXp += 10;
+        this.progressXP = this.progressXP-this.targetXP;
+        this.targetXP += 10;
         this.size += 20;
+        this.upgrade = 2;
 				break;
 			case 2:
 				this.abilityCardsActive = true;
 				this.abilityCards = ["BoxRoll", "Stomp", "Dash"];
-				this.progressXp = this.progressXp-this.targetXp;
-				this.upgrade = 3;
-				this.targetXp += 20;
+        this.progressXP = this.progressXP-this.targetXP;
+        this.targetXP += 20;
         this.size += 20;
+        this.upgrade = 3;
 				break;
 			case 3:
 				this.abilityCardsActive = true;
@@ -267,16 +258,17 @@ var Player = function(id, name, x, y, size){
 					this.abilityCards = ["ERROR"];
 					break;
 				}
-				this.progressXp = this.progressXp-this.targetXp;
-				this.upgrade = 4;
-				this.targetXp += 20;
+        this.progressXP = this.progressXP-this.targetXP;
+        this.targetXP += 30;
         this.size += 20;
+        this.upgrade = 4;
 				break;
 			case 4:
-				this.progressXp = this.progressXp-this.targetXp;
-	    	this.upgrade = 2;
-	    	this.targetXp += 50;
+        this.progressXP = this.progressXP-this.targetXP;
+        this.targetXP += 100;
         this.size += 50;
+        this.upgrade = 2;
+	    	//no cards to show
 	    	break;
 	    default:
 	    	break;
@@ -291,46 +283,79 @@ var Player = function(id, name, x, y, size){
 				var hitRightSide = this.x+this.size/2>players[t].x-players[t].size/2 && this.x+this.size/2<players[t].x+players[t].size/2 
 				var wayBiggerThanYou = (players[t].size/this.size)>5
 				var waySmallerThanYou = (this.size/players[t].size)>5
-				var yourSpeed = this.getSpeed(); //if player is still (not ability) getspeed() is NOT ZERO!!!
-				var othersSpeed = players[t].getSpeed();
+
 				if((hitLeftSide || hitRightSide) && !(wayBiggerThanYou || waySmallerThanYou)){
-					if(hitLeftSide){
-						if(this.size>players[t].size){
-              if(players[t].x > 0){
-                if(yourSpeed != 0){
-                  players[t].x -= yourSpeed;
+          if(!((players[t].doingAbility && players[t].whatAbility === "Hide")||(this.doingAbility && this.whatAbility === "Hide"))){
+            if(hitLeftSide && this.isFlipped){
+              players[t].bumpForce = -this.size/10
+              this.progressXP+=this.XP/3;
+              this.XP+=this.XP/3;
+              // this.size+=this.size/3;
+              if(this.progressXP>this.targetXP){
+			          this.doUpgrade(this.upgrade);
+              }
+              players[t].XP-=this.XP/3;
+              players[t].size-=this.size/3;
+              players[t].progressXP-=this.XP/3;
+              if(players[t].progressXP < 0){
+                players[t].progressXP = 0;
+              }
+            }
+            if(hitRightSide && !this.isFlipped){
+              players[t].bumpForce = this.size/10
+              this.progressXP+=this.XP/3;
+              this.XP+=this.XP/3;
+              // this.size+=this.size/3;
+              if(this.progressXP>this.targetXP){
+			          this.doUpgrade(this.upgrade);
+              }
+              players[t].XP-=this.XP/3;
+              players[t].size-=this.size/3;
+              players[t].progressXP-=this.XP/3;
+              if(players[t].progressXP < 0){
+                players[t].progressXP = 0;
+              }
+            }
+          }
+          else{
+            if(hitLeftSide){
+              if(this.size>players[t].size){
+                if(players[t].x > 0){
+                  if(this.getSpeed() != 0){
+                    players[t].x -= this.getSpeed();
+                  }
+                }
+              } else{
+                if(this.x < mapSize){
+                  this.x += (players[t].getSpeed()+this.getSpeed());
+                }	
+              }
+            }
+            if(hitRightSide){
+              if(this.size>players[t].size){
+                if(players[t].x<mapSize){
+                  players[t].x += this.getSpeed();
+                }
+              } else{
+                if(this.x > 0){
+                  this.x -= (players[t].getSpeed()+this.getSpeed());
                 }
               }
-						} else{
-              if(this.x < mapSize){
-							  this.x += othersSpeed;
-              }	
-						}
-					}
-          if(hitRightSide){
-						if(this.size>players[t].size){
-              if(players[t].x<mapSize){
-							  players[t].x += yourSpeed;
-              }
-						} else{
-              if(this.x > 0){
-							  this.x -= othersSpeed;
-              }
-						}
-					}
+            }
+          }
 				}
 			}
 		}
   }
   
-	this.handleXp = function(){
+	this.handleXP = function(){
 		var headX;
 		var headY;
 		var range;
 		if(!this.isFlipped){
-			headX = this.x+this.size*0.6;
+			headX = this.x+this.size*0.65;
 		} else{
-			headX = this.x-this.size*0.6;
+			headX = this.x-this.size*0.65;
 		}
     headY = this.y-this.size*0.44;
     range = this.size*0.075;
@@ -340,8 +365,8 @@ var Player = function(id, name, x, y, size){
         if(Math.sqrt(Math.pow(headX-plants[i].flower.x,2)+Math.pow(headY-plants[i].flower.y,2))< (range+plants[i].flower.size/2)){
           if(plants[i].hasFlower){
             plants[i].hasFlower = false;
-            this.progressXp+= plants[i].flower.xp;
-            this.xp+= plants[i].flower.xp;
+            this.progressXP+= plants[i].flower.XP;
+            this.XP+= plants[i].flower.XP;
             sendPlantUpdate();
           } 
         }
@@ -349,8 +374,8 @@ var Player = function(id, name, x, y, size){
           if(Math.sqrt(Math.pow(headX-plants[i].leaves[j].x,2)+Math.pow(headY-plants[i].leaves[j].y,2))< (range+plants[i].leaves[j].size/2)){
             if(plants[i].hasLeaf[j]){
               plants[i].hasLeaf[j] = false;
-              this.progressXp+= plants[i].leaves[j].xp;
-              this.xp+= plants[i].leaves[j].xp;
+              this.progressXP+= plants[i].leaves[j].XP;
+              this.XP+= plants[i].leaves[j].XP;
               sendPlantUpdate();
             } 
           }
@@ -358,7 +383,7 @@ var Player = function(id, name, x, y, size){
       }
 	  }
 		
-		if(this.progressXp>this.targetXp){
+		if(this.progressXP>this.targetXP){
 			this.doUpgrade(this.upgrade);
     }
 	}
@@ -398,19 +423,34 @@ var Player = function(id, name, x, y, size){
         }
         break;
       case "JumpStomp":
-      	for(let p in plants){ //testing
-          for(let l in plants[p].hasLeaf){
-            plants[p].hasLeaf[l] = true;
-          }
-          plants[p].hasFlower = true;
-        }
+      	// for(let p in plants){ //testing
+      	// for(let l in plants[p].hasLeaf){
+      	// plants[p].hasLeaf[l] = true;
+      	// }
+      	// plants[p].hasFlower = true;
+      	// }
         break;
       case "Shockwave":
-      	for(let t in players){
-      		if(Math.abs(players[t].x-this.x)<400){
-      			players[t].x += players[t].x-this.x;
-      		}
-      	}
+      	if(this.abilityTimer === ShockwaveTime){
+          this.legOffsetX = (upperLegBound*this.size)-(ShockwaveTime*this.getSpeed());
+          this.frontLegUp = true;
+          this.legDirX = 1;
+        } else if(this.abilityTimer === 1){
+          this.frontLegUp = false;
+          this.legDirX = -1;
+          for(let t in players){
+            if(players[t].id != this.id){
+              if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(this.size*1.25))){
+                if(players[t].x>this.x){
+                  players[t].bumpForce = this.size/8;
+                }
+                if(players[t].x<this.x){
+                  players[t].bumpForce = -(this.size/8);
+                }
+              }
+            }
+          }
+        }
       	break;
       case "Dash":
       	//do nothing, only increases speed
@@ -430,7 +470,21 @@ var Player = function(id, name, x, y, size){
 			this.doingAbility = false;
 		}
 	}
-
+  
+  this.die = function(){
+    this.x = Math.random()*mapSize;
+    this.progressXP = 5;
+    this.XP = this.progressXP;
+    this.upgrade = 1; //player on first upgrade
+    this.targetXP = 20;
+    this.size = 120;
+    this.walkSpeed = 1.5;
+    this.bumpForce = 0;
+    this.abilityCardsActive = false;
+    this.abilityCards = [];
+    this.abilitySet = [];
+  }
+  
 	this.animateLegs = function(){
 		this.legOffsetX+=this.getSpeed()*this.legDirX;
 		if(this.walkSpeed*this.doMovement === 0){
@@ -451,24 +505,30 @@ var Player = function(id, name, x, y, size){
   }
 
 	this.update = function(){
-    if(this.bumpForce != 0){ //abilities can do this
+    if(this.bumpForce != 0){ //abilities can make turtles do this
       this.bumpForce *= 0.9;
       if(Math.abs(this.bumpForce)<0.1){
         this.bumpForce = 0;
       }
-      this.x+=this.bumpForce;
+      if(this.x<mapSize && this.x>0){
+        this.x+=this.bumpForce;
+      }
     }
 		if(this.distXToMouse<this.size*detectionRange){
 			this.doMovement = false;
 		} else{
 			this.doMovement = true;
 		}
-    this.handleXp();
+    this.handleXP();
 		if(this.doingAbility){
 			this.playAbility(this.whatAbility); //this can overwrite anything
 		}
     this.animateLegs();
     this.handleCollisions();
+    
+    if(this.size <75){
+      this.die();
+    }
     
 		if(this.doMovement){
 			if (!(this.isFlipped)) {
@@ -498,10 +558,10 @@ var Player = function(id, name, x, y, size){
             id: this.id,
             x: this.x,
             y: this.y,
-            progressXp: this.progressXp,
-            xp: this.xp,
+            progressXP: this.progressXP,
+            XP: this.XP,
             upgrade: this.upgrade,
-            targetXp: this.targetXp,
+            targetXP: this.targetXP,
             size: this.size,
             doMovement: this.doMovement,
             legOffsetX: this.legOffsetX,
@@ -577,7 +637,7 @@ var Plant = function(id, x, height, hasFlower, hasLeaf){
 var Flower = function(x,y){
 	this.x = x;
 	this.y = y;
-	this.xp = 25+Math.random()*5;
+	this.XP = 25+Math.random()*5;
 	this.size = 150;
 	return this;
 }
@@ -586,7 +646,7 @@ var Leaf = function(x, y, isFlipped){
 	this.x = x;
 	this.y = y;
 	this.isFlipped = isFlipped;
-	this.xp = 3+Math.random()*2;
+	this.XP = 3+Math.random()*2;
 	this.size = 100;
 	return this;
 }
@@ -601,13 +661,14 @@ function getAllPlantsInitPack() {
 
 function sendPlantUpdate() {
     var plantUpdatePack = [];
-
+  
     for(let i in plants) {
         // plants[i].update();
         plantUpdatePack.push(plants[i].getUpdatePack());
     }
 
     io.emit("plantUpdatePack", {plantUpdatePack});
+    
 }
 
 setInterval(() => {
@@ -619,12 +680,25 @@ setInterval(() => {
     }
   
     io.emit("updatePack", {updatePack});
+  
+}, 35)
 
-    // if(1){
-    //   var plantIndex = Math.floor(Math.random())*(plants.length-1);
-    //   var leafIndex = Math.floor(Math.random())*(plants[plantIndex].hasLeaf.length-1);
-    //   plants[plantIndex].hasLeaf[leafIndex] = true;
-    //   plants[plantIndex].leaves[leafIndex].size = 500;
-    //   sendPlantUpdate();
-    // }
-}, 1000/35)
+setInterval(() => {
+  for(let i in plants) {
+    if(Math.floor(Math.random()*5)===0){
+      for(let j in plants[i].hasLeaf){
+        if(plants[i].hasLeaf[j] === false){
+          if(Math.floor(Math.random()*3)===0){
+            plants[i].hasLeaf[j] = true;
+          }
+        }
+      }
+      if(plants[i].hasFlower === false){
+        if(Math.floor(Math.random()*5)===0){
+          plants[i].hasFlower = true;
+        }
+      }
+      sendPlantUpdate();
+    }
+  }
+}, 5000)
