@@ -130,14 +130,14 @@ io.on('connection', function(socket) {
         player.upgrade = 4;
 				break;
       case 4:
-        player.progressXP = player.progressXP-player.targetXP;
-        player.targetXP += 100;
-        player.size += 50;
-        player.upgrade = 2;
+        //updated already
 	    	break;
       default:
         break;
       }
+      player.doingAbility = true;
+      player.whatAbility = "Dash";
+      player.abilityTimer = 30;
       
     })
 
@@ -262,6 +262,7 @@ var Player = function(id, name, x, y){
 			case 2:
 				this.abilityCardsActive = true;
 				this.abilityCards = ["BoxRoll", "Stomp", "Dash"];
+        break;
 			case 3:
 				this.abilityCardsActive = true;
 				switch(this.abilitySet[this.abilitySet.length-1]){
@@ -279,8 +280,14 @@ var Player = function(id, name, x, y){
 					this.abilityCards = ["ERROR"];
 					break;
 				}
+        break;
 			case 4:
         //no cards to show
+        this.progressXP = this.progressXP-this.targetXP;
+        this.targetXP += 100;
+        this.size += 50;
+        this.upgrade = 2;
+        break;
 	    default:
 	    	break;
 			}
