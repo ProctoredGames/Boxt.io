@@ -102,13 +102,43 @@ io.on('connection', function(socket) {
     })
 
     socket.on("choseCard", (data) =>{
-    	player.abilityCardsActive = false;
-    	if(player.upgrade!=4){
+      player.abilityCardsActive = false;
+    	if(player.upgrade!=3){
     		player.abilitySet.push(player.abilityCards[data.abilityCard]);
     	} else{ //upgrade existing ability instead
     		player.abilitySet[player.abilitySet.length-1] = player.abilityCards[data.abilityCard];
     	}
       player.abilityCards = []; //stops hacking by making indices worthless after used
+      
+      switch(player.upgrade){
+      case 1:
+        player.progressXP = player.progressXP-player.targetXP;
+        player.targetXP += 10;
+        player.size += 20;
+        player.upgrade = 2;
+        break;
+      case 2:
+        player.progressXP = player.progressXP-player.targetXP;
+        player.targetXP += 20;
+        player.size += 20;
+        player.upgrade = 3;
+				break;
+      case 3:
+        player.progressXP = player.progressXP-player.targetXP;
+        player.targetXP += 30;
+        player.size += 20;
+        player.upgrade = 4;
+				break;
+      case 4:
+        player.progressXP = player.progressXP-player.targetXP;
+        player.targetXP += 100;
+        player.size += 50;
+        player.upgrade = 2;
+	    	break;
+      default:
+        break;
+      }
+      
     })
 
     socket.on("disconnect", () => {
@@ -228,19 +258,10 @@ var Player = function(id, name, x, y){
 			case 1:
 				this.abilityCardsActive = true;
 				this.abilityCards = ["Hide"];
-        this.progressXP = this.progressXP-this.targetXP;
-        this.targetXP += 10;
-        this.size += 20;
-        this.upgrade = 2;
 				break;
 			case 2:
 				this.abilityCardsActive = true;
 				this.abilityCards = ["BoxRoll", "Stomp", "Dash"];
-        this.progressXP = this.progressXP-this.targetXP;
-        this.targetXP += 20;
-        this.size += 20;
-        this.upgrade = 3;
-				break;
 			case 3:
 				this.abilityCardsActive = true;
 				switch(this.abilitySet[this.abilitySet.length-1]){
@@ -258,18 +279,8 @@ var Player = function(id, name, x, y){
 					this.abilityCards = ["ERROR"];
 					break;
 				}
-        this.progressXP = this.progressXP-this.targetXP;
-        this.targetXP += 30;
-        this.size += 20;
-        this.upgrade = 4;
-				break;
 			case 4:
-        this.progressXP = this.progressXP-this.targetXP;
-        this.targetXP += 100;
-        this.size += 50;
-        this.upgrade = 2;
-	    	//no cards to show
-	    	break;
+        //no cards to show
 	    default:
 	    	break;
 			}

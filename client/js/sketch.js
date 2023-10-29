@@ -24,7 +24,7 @@ var mapSize = 12000;
 function preload(){
 	shellBox = loadImage('assets/shellBox.png');
 	shellDome = loadImage('assets/shellDome.png');
-  	shellSpike = loadImage('assets/shellSpike.png');
+  shellSpike = loadImage('assets/shellSpike.png');
 	// turtle = loadImage('assets/turtle.png');
 	turtleHead = loadImage('assets/turtleHead.png');
 	// turtleJaw = loadImage('assets/turtle.png');
@@ -151,24 +151,21 @@ function draw(){
             translate(adjustedX, adjustedY); //zooming in to 1/3 up the player
         }
     }
-  
-  
-    //sky
+
     fill(0, 0, 200);
     rect(0, 0-adjustedY, mapSize, windowHeight);
-    //ground
     fill(0, 150, 0);
     rect(0, 0, mapSize, windowHeight-adjustedY);
-  
 
     for(let i in plants) {
-      plants[i].draw();
-      for(let j in plants[i].leaves){
-        if(plants[i].hasLeaf[j]){
-          plants[i].leaves[j].draw();
-        }
-      }
+        plants[i].draw();
+        for(let j in plants[i].leaves){
+			    if(plants[i].hasLeaf[j]){
+				    plants[i].leaves[j].draw();
+			    }
+		    }
     }
+    
     for(let i in plants) {
     	if(plants[i].hasFlower){
 			  plants[i].flower.draw();
@@ -177,24 +174,26 @@ function draw(){
     for(let i in players) {
         players[i].draw();
     }
+
     pop();
+
     for(let i in players) {
-      if(players[i].id === myId) {
-        players[i].drawUI();
-      }
+        if(players[i].id === myId) {
+        	players[i].drawUI();
+        }
     }
-  
-  
     fill('rgba(0,0,0, 0.8)');
     rect(windowHeight*0.02, windowHeight*0.02, windowHeight*0.25, windowHeight*0.3, 20);
     fill(0, 200, 0);
-    textSize(windowHeight/(7*6));
+    textSize(17);
     textAlign(CENTER);
     text("LEADERBOARD", windowHeight*0.02, (windowHeight*0.045), windowHeight*0.25, windowHeight*0.03)
+    textSize(15);
     textAlign(LEFT);
+
     var rankedPlayers = players;
+    
     var count = 1;
-    textSize(windowHeight/(9*6));
     for(let i in rankedPlayers){
     	if(rankedPlayers[i].id === myId){
       		fill(255, 255, 0);
@@ -342,11 +341,9 @@ var Player = function(id, name, x, y, size){
 			break;
 		}
 
-    
-		push();//1
-	  translate(this.x, this.y);
-    
-	  push();//2
+		push();
+	    translate(this.x, this.y);
+	    push();
 		if(!(this.isFlipped)){
 			scale(1, 1)
 		} else{
@@ -377,19 +374,17 @@ var Player = function(id, name, x, y, size){
         }
       }
       
-			push();//3
+			push();
 			translate(this.size*0.55, -(this.size*0.35));
 			if(!(this.isFlipped)){
 				rotate(this.headAngle)
 			} else{
 				rotate(Math.PI-this.headAngle)
 			}
-			image(turtleHead, this.size*0.05, -(this.size*0.05), this.size*(120/300), this.size/3); 
-			pop();//3
-      
+			image(turtleHead, this.size*0.05, -(this.size*0.05), this.size*(120/300), this.size/3);
+			pop();
 		}
-    
-		push();//4
+		push();
 		translate(0, -(this.size/2)-(this.size/6));
 		if(this.doingAbility){
 			if(this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll"){
@@ -405,16 +400,14 @@ var Player = function(id, name, x, y, size){
 		} else{
 			image(shellImg, 0, 0, this.size, this.size);
 		}
-    pop();//4
-    
-		pop();//2
-    
-    translate(0, 0);
-    fill(0, 255, 0);
-    textSize(26);
-    textAlign(CENTER);
-    text(this.name, 0, -this.size*1.22);
-		pop();//1
+    	pop();
+		pop();
+    	translate(0, 0);
+    	fill(0, 255, 0);
+    	textSize(26);
+    	textAlign(CENTER);
+    	text(this.name, 0, -this.size*1.22);
+		pop();
 
 	}
 	return this;
