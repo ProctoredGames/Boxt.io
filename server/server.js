@@ -308,7 +308,7 @@ var Player = function(id, name, x, y){
               players[t].bumpForce = -this.size/10
               this.progressXP+=this.XP/3;
               this.XP+=this.XP/3;
-              // this.size+=this.size/3;
+              this.size+=this.size/3;
               if(this.progressXP>this.targetXP){
 			          this.doUpgrade(this.upgrade);
               }
@@ -323,7 +323,7 @@ var Player = function(id, name, x, y){
               players[t].bumpForce = this.size/10
               this.progressXP+=this.XP/3;
               this.XP+=this.XP/3;
-              // this.size+=this.size/3;
+              this.size+=this.size/3;
               if(this.progressXP>this.targetXP){
 			          this.doUpgrade(this.upgrade);
               }
@@ -498,9 +498,14 @@ var Player = function(id, name, x, y){
     this.size = 120;
     this.walkSpeed = 1.5;
     this.bumpForce = 0;
+    this.legOffsetX = 0;
+    this.legOffsetY = 0;
+    this.legDirX = 1;
+    this.frontLegUp = 1
     this.abilityCardsActive = false;
     this.abilityCards = [];
     this.abilitySet = [];
+    this.shellType = "Box"
   }
   
 	this.animateLegs = function(){
