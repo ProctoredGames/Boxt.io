@@ -24,7 +24,7 @@ var mapSize = 12000;
 function preload(){
 	shellBox = loadImage('assets/shellBox.png');
 	shellDome = loadImage('assets/shellDome.png');
-  	shellSpike = loadImage('assets/shellSpike.png');
+  shellSpike = loadImage('assets/shellSpike.png');
 	// turtle = loadImage('assets/turtle.png');
 	turtleHead = loadImage('assets/turtleHead.png');
 	// turtleJaw = loadImage('assets/turtle.png');
