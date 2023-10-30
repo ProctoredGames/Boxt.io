@@ -15,7 +15,7 @@ var players = [];
 var plants = [];
 
 //needs to be changed in BOTH server and client
-var mapSize = 1000;
+var mapSize = 6000;
 
 var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 
@@ -120,7 +120,6 @@ io.on('connection', function(socket) {
         player.targetXP += XPtargets[player.upgrade];
         player.HP *= ((player.XP/2)/player.maxHP)
         player.maxHP = player.XP/2;
-        player.size = (player.XP-XPtargets[0])*(2/3)+120;
         switch(player.upgrade){
         case 1:
           player.upgrade = 2;
@@ -291,9 +290,9 @@ var Player = function(id, name, x, y){
         //no cards to show
         this.progressXP = this.progressXP-this.targetXP;
         this.targetXP += XPtargets[this.upgrade];
+        this.size += XPtargets[this.upgrade]
         this.HP *= ((this.XP/2)/this.maxHP)
         this.maxHP = this.XP/2;
-        this.size = (this.XP-XPtargets[0])*(2/3)+120;
         this.upgrade = 2;
         break;
 	    default:
@@ -347,6 +346,7 @@ var Player = function(id, name, x, y){
               if(players[t].HP<=0){
                 this.XP += players[t].XP;
                 this.progressXP += players[t].XP;
+                this.size += (players[t].XP-XPtargets[0])/3;
               }
             }
             if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
@@ -355,6 +355,7 @@ var Player = function(id, name, x, y){
               if(this.HP<=0){
                 players[t].XP += this.XP;
                 players[t].progressXP += this.XP;
+                players[t].size += (this.XP-XPtargets[0])/3;
               }
             }
           }
@@ -382,6 +383,7 @@ var Player = function(id, name, x, y){
             plants[i].hasFlower = false;
             this.progressXP+= plants[i].flower.XP;
             this.XP+= plants[i].flower.XP;
+            this.size+= (plants[i].flower.XP)/3;
             sendPlantUpdate();
           } 
         }
@@ -391,6 +393,7 @@ var Player = function(id, name, x, y){
               plants[i].hasLeaf[j] = false;
               this.progressXP+= plants[i].leaves[j].XP;
               this.XP+= plants[i].leaves[j].XP;
+              this.size+= (plants[i].leaves[j].XP)/3;
               sendPlantUpdate();
             } 
           }
