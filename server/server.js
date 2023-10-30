@@ -109,33 +109,34 @@ io.on('connection', function(socket) {
     socket.on("choseCard", (data) =>{
       player.abilityCardsActive = false;
     	if(player.upgrade!=3){
-    		player.abilitySet.push(player.abilityCards[data.abilityCard]);
+        if(player.upgrade!=4){
+          player.abilitySet.push(player.abilityCards[data.abilityCard]);
+        }
     	} else{ //upgrade existing ability instead
     		player.abilitySet[player.abilitySet.length-1] = player.abilityCards[data.abilityCard];
     	}
       player.abilityCards = []; //stops hacking by making indices worthless after used
       
-      if(player.upgrade != 4){
-        player.progressXP = player.progressXP-player.targetXP;
-        player.targetXP += XPtargets[player.upgrade];
-        player.HP *= ((player.XP/2)/player.maxHP)
-        player.maxHP = player.XP/2;
-        switch(player.upgrade){
-        case 1:
-          player.upgrade = 2;
-          break;
-        case 2:
-          player.upgrade = 3;
-          break;
-        case 3:
-          player.upgrade = 4;
-          break;
-        case 4:
-          player.upgrade = 2;
-          break;
-        default:
-          break;
-        }
+      player.progressXP = player.progressXP-player.targetXP;
+      player.targetXP += XPtargets[player.upgrade];
+      player.HP *= ((player.XP/2)/player.maxHP)
+      player.maxHP = player.XP/2;
+      switch(player.upgrade){
+      case 1:
+        player.upgrade = 2;
+        break;
+      case 2:
+        player.upgrade = 3;
+        break;
+      case 3:
+        player.upgrade = 4;
+        break;
+      case 4: //Grow Turtle!
+        player.size += XPtargets[player.upgrade]
+        player.upgrade = 2;
+        break;
+      default:
+        break;
       }
       
       player.doingAbility = true;
@@ -287,13 +288,8 @@ var Player = function(id, name, x, y){
 				}
         break;
 			case 4:
-        //no cards to show
-        this.progressXP = this.progressXP-this.targetXP;
-        this.targetXP += XPtargets[this.upgrade];
-        this.size += XPtargets[this.upgrade]
-        this.HP *= ((this.XP/2)/this.maxHP)
-        this.maxHP = this.XP/2;
-        this.upgrade = 2;
+        this.abilityCardsActive = true;
+				this.abilityCards = ["Grow Turtle!"];
         break;
 	    default:
 	    	break;
