@@ -17,7 +17,7 @@ var stem, leaf, flowerWhite, flowerYellow;
 var HideUI, BoxRollUI, DomeRollUI, SpikeRollUI;
 
 //needs to be changed in BOTH server and client
-var mapSize = 6000;
+var mapSize = 1000;
 
 //loads assets on start of game
 function preload(){

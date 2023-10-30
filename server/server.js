@@ -15,9 +15,9 @@ var players = [];
 var plants = [];
 
 //needs to be changed in BOTH server and client
-var mapSize = 6000;
+var mapSize = 1000;
 
-var XPtargets = [0, 30, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
+var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 
 server.listen(port, function(){//when the server starts, generate the map with this function
 	var plant = {};
@@ -118,7 +118,9 @@ io.on('connection', function(socket) {
       if(player.upgrade != 4){
         player.progressXP = player.progressXP-player.targetXP;
         player.targetXP += XPtargets[player.upgrade];
-        player.size += player.targetXP/2;
+        player.HP *= (player.XP/player.maxHP)
+        player.maxHP = player.XP;
+        player.size = (this.XP+120-XPtargets[0])*(2/3);
         switch(player.upgrade){
         case 1:
           player.upgrade = 2;
@@ -201,8 +203,8 @@ var Player = function(id, name, x, y){
 	this.progressXP = XPtargets[0];
 	this.XP = this.progressXP;
   
-  this.maxHP = 20;
-  this.HP = 20;
+  this.maxHP = this.XP;
+  this.HP = this.maxHP;
   
 	this.upgrade = 1; //player on first upgrade
 	this.targetXP = XPtargets[this.upgrade];
@@ -290,7 +292,9 @@ var Player = function(id, name, x, y){
         //no cards to show
         this.progressXP = this.progressXP-this.targetXP;
         this.targetXP += XPtargets[4];
-        this.size += this.targetXP/2;
+        this.HP *= (this.XP/this.maxHP)
+        this.maxHP = this.XP;
+        this.size = (this.XP+120-XPtargets[0])*(2/3);
         this.upgrade = 2;
         break;
 	    default:
@@ -487,7 +491,7 @@ var Player = function(id, name, x, y){
   
   this.die = function(){
     this.x = Math.random()*mapSize;
-    this.progressXP = 5;
+    this.progressXP = XPtargets[0];
     this.XP = this.progressXP;
     this.upgrade = 1; //player on first upgrade
     this.targetXP = 20;
@@ -497,6 +501,7 @@ var Player = function(id, name, x, y){
     this.abilityCardsActive = false;
     this.abilityCards = [];
     this.abilitySet = [];
+    this.maxHP = XPtargets[0];
     this.HP = this.maxHP;
   }
   
