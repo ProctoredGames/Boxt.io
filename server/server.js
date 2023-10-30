@@ -14,6 +14,11 @@ app.use(express.static(publicPath));
 var players = [];
 var plants = [];
 
+//needs to be changed in BOTH server and client
+var mapSize = 6000;
+
+var XPtargets = [0, 30, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
+
 server.listen(port, function(){//when the server starts, generate the map with this function
 	var plant = {};
 	for(let i = 0; i< (mapSize/100); i++){
@@ -110,34 +115,31 @@ io.on('connection', function(socket) {
     	}
       player.abilityCards = []; //stops hacking by making indices worthless after used
       
-      switch(player.upgrade){
-      case 1:
+      if(player.upgrade != 4){
         player.progressXP = player.progressXP-player.targetXP;
-        player.targetXP += 10;
-        player.size += 20;
-        player.upgrade = 2;
-        break;
-      case 2:
-        player.progressXP = player.progressXP-player.targetXP;
-        player.targetXP += 20;
-        player.size += 20;
-        player.upgrade = 3;
-				break;
-      case 3:
-        player.progressXP = player.progressXP-player.targetXP;
-        player.targetXP += 30;
-        player.size += 20;
-        player.upgrade = 4;
-				break;
-      case 4:
-        //updated already
-	    	break;
-      default:
-        break;
+        player.targetXP += XPtargets[player.upgrade];
+        player.size += player.targetXP/2;
+        switch(player.upgrade){
+        case 1:
+          player.upgrade = 2;
+          break;
+        case 2:
+          player.upgrade = 3;
+          break;
+        case 3:
+          player.upgrade = 4;
+          break;
+        case 4:
+          player.upgrade = 2;
+          break;
+        default:
+          break;
+        }
       }
+      
       player.doingAbility = true;
       player.whatAbility = "Dash";
-      player.abilityTimer = 30;
+      player.abilityTimer = 15;
       
     })
 
@@ -162,7 +164,6 @@ var upperLegBound = 0.025;
 var lowerLegBound = -0.075;
 
 var detectionRange = 0.4; //mouse moves player when it is greater than 60% of the player size
-var mapSize = 12000;
 
 var BoxRollTime = 40;
 var DomeRollTime = 40;
@@ -197,10 +198,14 @@ var Player = function(id, name, x, y){
 	this.abilityCards = [];
 	this.abilityCardsActive = false;
 
-	this.progressXP = 5;
+	this.progressXP = XPtargets[0];
 	this.XP = this.progressXP;
+  
+  this.maxHP = 20;
+  this.HP = 20;
+  
 	this.upgrade = 1; //player on first upgrade
-	this.targetXP = 20;
+	this.targetXP = XPtargets[this.upgrade];
 	this.size = 120;
 	this.walkSpeed = 1.5;
 	this.velY = 0;
@@ -284,8 +289,8 @@ var Player = function(id, name, x, y){
 			case 4:
         //no cards to show
         this.progressXP = this.progressXP-this.targetXP;
-        this.targetXP += 100;
-        this.size += 50;
+        this.targetXP += XPtargets[4];
+        this.size += this.targetXP/2;
         this.upgrade = 2;
         break;
 	    default:
@@ -302,62 +307,53 @@ var Player = function(id, name, x, y){
 				var wayBiggerThanYou = (players[t].size/this.size)>5
 				var waySmallerThanYou = (this.size/players[t].size)>5
 
+        //PLAYERS[t] hit left or PLAYERS[t] hit right
 				if((hitLeftSide || hitRightSide) && !(wayBiggerThanYou || waySmallerThanYou)){
-          if(!((players[t].doingAbility && players[t].whatAbility === "Hide")||(this.doingAbility && this.whatAbility === "Hide"))){
-            if(hitLeftSide && this.isFlipped){
-              players[t].bumpForce = -this.size/10
-              this.progressXP+=this.XP/3;
-              this.XP+=this.XP/3;
-              this.size+=this.size/3;
-              if(this.progressXP>this.targetXP){
-			          this.doUpgrade(this.upgrade);
+          if(hitLeftSide){
+            if(this.size>players[t].size){
+              if(players[t].x > 0){
+                if(this.getSpeed() != 0){
+                  players[t].x -= this.getSpeed();
+                }
               }
-              players[t].XP-=this.XP/3;
-              players[t].size-=this.size/3;
-              players[t].progressXP-=this.XP/3;
-              if(players[t].progressXP < 0){
-                players[t].progressXP = 0;
+            } else{
+              if(this.x < mapSize){
+                this.x += (players[t].getSpeed()+this.getSpeed());
+              }	
+            }
+            this.bumpForce = 5
+            players[t].bumpForce = -5
+          }else if(hitRightSide){
+            if(this.size>players[t].size){
+              if(players[t].x<mapSize){
+                players[t].x += this.getSpeed();
+              }
+            } else{
+              if(this.x > 0){
+                this.x -= (players[t].getSpeed()+this.getSpeed());
               }
             }
-            if(hitRightSide && !this.isFlipped){
-              players[t].bumpForce = this.size/10
-              this.progressXP+=this.XP/3;
-              this.XP+=this.XP/3;
-              this.size+=this.size/3;
-              if(this.progressXP>this.targetXP){
-			          this.doUpgrade(this.upgrade);
-              }
-              players[t].XP-=this.XP/3;
-              players[t].size-=this.size/3;
-              players[t].progressXP-=this.XP/3;
-              if(players[t].progressXP < 0){
-                players[t].progressXP = 0;
-              }
-            }
+            this.bumpForce = -5
+            players[t].bumpForce = 5
           }
-          else{
-            if(hitLeftSide){
-              if(this.size>players[t].size){
-                if(players[t].x > 0){
-                  if(this.getSpeed() != 0){
-                    players[t].x -= this.getSpeed();
-                  }
-                }
-              } else{
-                if(this.x < mapSize){
-                  this.x += (players[t].getSpeed()+this.getSpeed());
-                }	
+          if(!((this.doingAbility && this.whatAbility == "Hide") || (players[t].doingAbility && players[t].whatAbility == "Hide"))){
+            //we need to check everything for both players as the one first in the array will check first
+            if((this.isFlipped && players[t].isFlipped && hitLeftSide) || (this.isFlipped && !players[t].isFlipped && hitLeftSide) ||
+              (!this.isFlipped && players[t].isFlipped && hitRightSide) || (!this.isFlipped && !players[t].isFlipped && hitRightSide)){
+              players[t].HP-= this.XP/5;
+              if(players[t].HP<=0){
+                this.XP += players[t].XP;
+                this.progressXP += players[t].XP;
+                this.size += players[t].XP/2
               }
             }
-            if(hitRightSide){
-              if(this.size>players[t].size){
-                if(players[t].x<mapSize){
-                  players[t].x += this.getSpeed();
-                }
-              } else{
-                if(this.x > 0){
-                  this.x -= (players[t].getSpeed()+this.getSpeed());
-                }
+            if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
+              (players[t].isFlipped && !this.isFlipped && hitRightSide) || (players[t].isFlipped && this.isFlipped && hitRightSide)){
+              this.HP-= players[t].XP/5;
+              if(this.HP<=0){
+                players[t].XP += this.XP;
+                players[t].progressXP += this.XP;
+                players[t].size += this.XP/2
               }
             }
           }
@@ -498,14 +494,10 @@ var Player = function(id, name, x, y){
     this.size = 120;
     this.walkSpeed = 1.5;
     this.bumpForce = 0;
-    this.legOffsetX = 0;
-    this.legOffsetY = 0;
-    this.legDirX = 1;
-    this.frontLegUp = 1
     this.abilityCardsActive = false;
     this.abilityCards = [];
     this.abilitySet = [];
-    this.shellType = "Box"
+    this.HP = this.maxHP;
   }
   
 	this.animateLegs = function(){
@@ -528,7 +520,7 @@ var Player = function(id, name, x, y){
   }
 
 	this.update = function(){
-    if(this.bumpForce != 0){ //abilities can make turtles do this
+    if(this.bumpForce != 0){ //main game physics
       this.bumpForce *= 0.9;
       if(Math.abs(this.bumpForce)<0.1){
         this.bumpForce = 0;
@@ -549,7 +541,7 @@ var Player = function(id, name, x, y){
     this.animateLegs();
     this.handleCollisions();
     
-    if(this.size <75){
+    if(this.HP <= 0){
       this.die();
     }
     
@@ -583,6 +575,8 @@ var Player = function(id, name, x, y){
             y: this.y,
             progressXP: this.progressXP,
             XP: this.XP,
+            HP: this.HP,
+            maxHP: this.maxHP,
             upgrade: this.upgrade,
             targetXP: this.targetXP,
             size: this.size,

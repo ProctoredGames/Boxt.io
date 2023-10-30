@@ -1,4 +1,3 @@
-
 var socket;
 var myPlayer;
 var myId;
@@ -17,8 +16,8 @@ var turtle, turtleHead, turtleJaw, turtleFoot, turtleTail;
 var stem, leaf, flowerWhite, flowerYellow;
 var HideUI, BoxRollUI, DomeRollUI, SpikeRollUI;
 
-//map can be bigger
-var mapSize = 12000;
+//needs to be changed in BOTH server and client
+var mapSize = 6000;
 
 //loads assets on start of game
 function preload(){
@@ -73,13 +72,15 @@ function setup() {
 
     socket.on("updatePack", function(data) {
         for(let i in data.updatePack) {
-            for(let j in players) {//gets the data from players as to render
-                if(players[j].id === data.updatePack[i].id) {
+            for(let j in players){ //every player
+                if(players[j].id === data.updatePack[i].id) { //is this data for this player
                     players[j].x = data.updatePack[i].x;
                     players[j].y = data.updatePack[i].y;
                     players[j].progressXP = data.updatePack[i].progressXP;
                     players[j].XP = data.updatePack[i].XP;
                     players[j].targetXP = data.updatePack[i].targetXP;
+                    players[j].maxHP = data.updatePack[i].maxHP;
+                    players[j].HP = data.updatePack[i].HP;
                     players[j].upgrade = data.updatePack[i].upgrade;
                     players[j].size = data.updatePack[i].size;
                     players[j].doMovement = data.updatePack[i].doMovement;
@@ -172,7 +173,11 @@ function draw(){
     }
   }
   for(let i in players) {
-      players[i].draw();
+    players[i].draw();
+    if(players[i].HP != players[i].maxHP){
+      players[i].drawStatus();
+    }
+    players[i].drawName();
   }
 
   pop();
@@ -262,9 +267,33 @@ var Player = function(id, name, x, y, size){
 			console.log("ability image not found");
 			img = flowerWhite;
 			break;
-    }
-    return img;
+    	}
+    	return img;
 	}
+  
+  this.drawName = function(){
+    push();
+    translate(this.x, this.y);
+    fill(0, 0, 0);
+    textSize(26);
+    textAlign(CENTER);
+    text(this.name, 0, -this.size*1.22);
+    pop();
+  }
+  
+  this.drawStatus = function(){
+    var percentage = this.HP/this.maxHP
+    if(this.HP>this.maxHP){
+      percentage = 1.00
+    }
+    push();
+    translate(this.x, this.y);
+    fill(0, 100, 0);
+    rect(-this.size/2, -this.size*1.22-27, this.size, windowWidth*0.025, 10)
+    fill(0, 250, 0);
+    rect(-this.size/2, -this.size*1.22-27, this.size*percentage, windowWidth*0.025, 10);
+    pop();
+  }
 
 	this.drawUI = function(){
 		var adjustedY = ((height*0.75+this.size/3.5) - this.y);
@@ -342,8 +371,8 @@ var Player = function(id, name, x, y, size){
 		}
 
 		push();
-	    translate(this.x, this.y);
-	    push();
+	  translate(this.x, this.y);
+	  push();
 		if(!(this.isFlipped)){
 			scale(1, 1)
 		} else{
@@ -400,13 +429,8 @@ var Player = function(id, name, x, y, size){
 		} else{
 			image(shellImg, 0, 0, this.size, this.size);
 		}
-    	pop();
+    pop();
 		pop();
-    	translate(0, 0);
-    	fill(0, 255, 0);
-    	textSize(26);
-    	textAlign(CENTER);
-    	text(this.name, 0, -this.size*1.22);
 		pop();
 
 	}
