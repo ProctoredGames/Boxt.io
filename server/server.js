@@ -118,9 +118,9 @@ io.on('connection', function(socket) {
       if(player.upgrade != 4){
         player.progressXP = player.progressXP-player.targetXP;
         player.targetXP += XPtargets[player.upgrade];
-        player.HP *= (player.XP/player.maxHP)
-        player.maxHP = player.XP;
-        player.size = (this.XP+120-XPtargets[0])*(2/3);
+        player.HP *= ((player.XP/2)/player.maxHP)
+        player.maxHP = player.XP/2;
+        player.size = (player.XP-XPtargets[0])*(2/3)+120;
         switch(player.upgrade){
         case 1:
           player.upgrade = 2;
@@ -259,7 +259,6 @@ var Player = function(id, name, x, y){
 	}
 
 	this.doUpgrade = function(upgrade){
-    
 		if(!(this.abilityCardsActive)){
 			switch(upgrade){
 			case 1:
@@ -291,10 +290,10 @@ var Player = function(id, name, x, y){
 			case 4:
         //no cards to show
         this.progressXP = this.progressXP-this.targetXP;
-        this.targetXP += XPtargets[4];
-        this.HP *= (this.XP/this.maxHP)
-        this.maxHP = this.XP;
-        this.size = (this.XP+120-XPtargets[0])*(2/3);
+        this.targetXP += XPtargets[this.upgrade];
+        this.HP *= ((this.XP/2)/this.maxHP)
+        this.maxHP = this.XP/2;
+        this.size = (this.XP-XPtargets[0])*(2/3)+120;
         this.upgrade = 2;
         break;
 	    default:
@@ -348,7 +347,6 @@ var Player = function(id, name, x, y){
               if(players[t].HP<=0){
                 this.XP += players[t].XP;
                 this.progressXP += players[t].XP;
-                this.size += players[t].XP/2
               }
             }
             if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
@@ -357,7 +355,6 @@ var Player = function(id, name, x, y){
               if(this.HP<=0){
                 players[t].XP += this.XP;
                 players[t].progressXP += this.XP;
-                players[t].size += this.XP/2
               }
             }
           }
