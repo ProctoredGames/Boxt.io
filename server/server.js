@@ -174,8 +174,8 @@ var HideTime = 120;
 var StompTime = 5;
 var JumpStompTime = 1; //testing
 var ShockwaveTime = 10;
-var DashTime = 60;
-var ChargeTime = 30;
+var DashTime = 30;
+var ChargeTime = 20;
 
 var BoxRollAngle = (3.14159*1)/BoxRollTime;
 var DomeRollAngle = (3.14159*2)/DomeRollTime;
@@ -342,7 +342,7 @@ var Player = function(id, name, x, y){
               if(players[t].HP<=0){
                 this.XP += players[t].XP;
                 this.progressXP += players[t].XP;
-                this.size += (players[t].XP-XPtargets[0])/3;
+                this.size += (players[t].XP-XPtargets[0])/6;
               }
             }
             if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
@@ -351,7 +351,7 @@ var Player = function(id, name, x, y){
               if(this.HP<=0){
                 players[t].XP += this.XP;
                 players[t].progressXP += this.XP;
-                players[t].size += (this.XP-XPtargets[0])/3;
+                players[t].size += (this.XP-XPtargets[0])/6;
               }
             }
           }
@@ -379,7 +379,7 @@ var Player = function(id, name, x, y){
             plants[i].hasFlower = false;
             this.progressXP+= plants[i].flower.XP;
             this.XP+= plants[i].flower.XP;
-            this.size+= (plants[i].flower.XP)/3;
+            this.size+= (plants[i].flower.XP)/6;
             sendPlantUpdate();
           } 
         }
@@ -389,7 +389,7 @@ var Player = function(id, name, x, y){
               plants[i].hasLeaf[j] = false;
               this.progressXP+= plants[i].leaves[j].XP;
               this.XP+= plants[i].leaves[j].XP;
-              this.size+= (plants[i].leaves[j].XP)/3;
+              this.size+= (plants[i].leaves[j].XP)/6;
               sendPlantUpdate();
             } 
           }
