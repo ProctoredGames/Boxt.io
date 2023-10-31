@@ -390,6 +390,10 @@ var Player = function(id, name, x, y){
             this.progressXP+= plants[i].flower.XP;
             this.XP+= plants[i].flower.XP;
             this.size+= (plants[i].flower.XP)/3.5;
+            this.HP += (this.maxHP/20); //for eating the flower
+            if(this.HP>this.maxHP){
+              this.HP = this.maxHP;
+            }
             var ratio = this.size/this.maxHP;
             this.maxHP = this.size;
             this.HP *= ratio; //scales HP with size
@@ -543,6 +547,9 @@ var Player = function(id, name, x, y){
   }
 
 	this.update = function(){
+    if(this.HP>this.maxHP){
+      this.HP = this.maxHP;
+    }
     var ratio = this.size/this.maxHP;
     this.maxHP = this.size;
     this.HP *= ratio; //scales HP with size
