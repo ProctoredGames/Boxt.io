@@ -119,8 +119,6 @@ io.on('connection', function(socket) {
       
       player.progressXP = player.progressXP-player.targetXP;
       player.targetXP += XPtargets[player.upgrade];
-      player.HP *= ((player.XP/2)/player.maxHP)
-      player.maxHP = player.XP/2;
       switch(player.upgrade){
       case 1:
         player.upgrade = 2;
@@ -202,13 +200,13 @@ var Player = function(id, name, x, y){
 
 	this.progressXP = XPtargets[0];
 	this.XP = this.progressXP;
+  this.size = 120;
   
-  this.maxHP = this.XP;
+  this.maxHP = this.size;
   this.HP = this.maxHP;
   
 	this.upgrade = 1; //player on first upgrade
 	this.targetXP = XPtargets[this.upgrade];
-	this.size = 120;
 	this.walkSpeed = 1.5;
 	this.velY = 0;
 	this.legOffsetX = 0;
@@ -338,20 +336,32 @@ var Player = function(id, name, x, y){
             //we need to check everything for both players as the one first in the array will check first
             if((this.isFlipped && players[t].isFlipped && hitLeftSide) || (this.isFlipped && !players[t].isFlipped && hitLeftSide) ||
               (!this.isFlipped && players[t].isFlipped && hitRightSide) || (!this.isFlipped && !players[t].isFlipped && hitRightSide)){
-              players[t].HP-= this.XP/5;
+              players[t].HP-= this.size/5;
               if(players[t].HP<=0){
                 this.XP += players[t].XP;
                 this.progressXP += players[t].XP;
                 this.size += (players[t].XP-XPtargets[0])/3.5;
+                var ratio = this.size/this.maxHP;
+                this.maxHP = this.size;
+                this.HP *= ratio; //scales HP with size
+                if((this.HP+0.01)>this.maxHP){
+                  this.HP = this.maxHP;
+                }
               }
             }
             if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
               (players[t].isFlipped && !this.isFlipped && hitRightSide) || (players[t].isFlipped && this.isFlipped && hitRightSide)){
-              this.HP-= players[t].XP/5;
+              this.HP-= players[t].size/5;
               if(this.HP<=0){
                 players[t].XP += this.XP;
                 players[t].progressXP += this.XP;
-                players[t].size += (this.XP-XPtargets[0])/3.5;
+                players[t].size += (players[t].XP-XPtargets[0])/3.5;
+                var ratio = players[t].size/players[t].maxHP;
+                players[t].maxHP = players[t].size;
+                players[t].HP *= ratio; //scales HP with size
+                if((this.HP+0.01)>this.maxHP){
+                  this.HP = this.maxHP;
+                }
               }
             }
           }
@@ -380,6 +390,12 @@ var Player = function(id, name, x, y){
             this.progressXP+= plants[i].flower.XP;
             this.XP+= plants[i].flower.XP;
             this.size+= (plants[i].flower.XP)/3.5;
+            var ratio = this.size/this.maxHP;
+            this.maxHP = this.size;
+            this.HP *= ratio; //scales HP with size
+            if((this.HP+0.01)>this.maxHP){
+              this.HP = this.maxHP;
+            }
             sendPlantUpdate();
           } 
         }
@@ -390,6 +406,12 @@ var Player = function(id, name, x, y){
               this.progressXP+= plants[i].leaves[j].XP;
               this.XP+= plants[i].leaves[j].XP;
               this.size+= (plants[i].leaves[j].XP)/3.5;
+              var ratio = this.size/this.maxHP;
+              this.maxHP = this.size;
+              this.HP *= ratio; //scales HP with size
+              if((this.HP+0.01)>this.maxHP){
+                this.HP = this.maxHP;
+              }
               sendPlantUpdate();
             } 
           }
@@ -497,7 +519,7 @@ var Player = function(id, name, x, y){
     this.abilityCardsActive = false;
     this.abilityCards = [];
     this.abilitySet = [];
-    this.maxHP = XPtargets[0];
+    this.maxHP = this.size;
     this.HP = this.maxHP;
   }
   
@@ -521,6 +543,12 @@ var Player = function(id, name, x, y){
   }
 
 	this.update = function(){
+    var ratio = this.size/this.maxHP;
+    this.maxHP = this.size;
+    this.HP *= ratio; //scales HP with size
+    if((this.HP+0.01)>this.maxHP){
+      this.HP = this.maxHP;
+    }
     if(this.bumpForce != 0){ //main game physics
       this.bumpForce *= 0.9;
       if(Math.abs(this.bumpForce)<0.1){
