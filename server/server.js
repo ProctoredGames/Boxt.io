@@ -13,6 +13,7 @@ app.use(express.static(publicPath));
 
 var players = [];
 var plants = [];
+var bots = [];
 
 //needs to be changed in BOTH server and client
 var mapSize = 6000;
@@ -25,15 +26,20 @@ server.listen(port, function(){//when the server starts, generate the map with t
 		plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+200, true, true);
 		plants.push(plant);
 	}
+  var bot = {};
+  for(let i = 0; i<6; i++){
+    bot = new Bot(i, (Math.random()*mapSize), 0, ((Math.random()*120)+50));
+    bots.push(bot);
+  }
 	console.log("Server Started on port "+ port +"!");
 });
 
 io.on('connection', function(socket) {
-    console.log('someone conencted, Id: ' + socket.id);
+    console.log('someone connected, Id: ' + socket.id);
     var player = {};
     
     socket.on("imReady", (data) => { //player joins
-        player = new Player(socket.id, data.name,  Math.random() * mapSize,0);
+        player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 120);
         players.push(player);
 
         socket.emit("yourId", {id: player.id});
@@ -41,6 +47,7 @@ io.on('connection', function(socket) {
 
         socket.emit("initPack", {initPack: getAllPlayersInitPack()});
         socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
+        socket.emit("botInitPack", {botInitPack: getAllBotsInitPack()});
     });
 
     socket.on("inputData", (data) => {
@@ -181,9 +188,9 @@ var SpikeRollAngle = (3.14159/2)/SpikeRollTime;
 
 var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
-var Player = function(id, name, x, y){
+var Player = function(id, name, x, y, size){
 	this.id = id;
-	this.name = names[Math.floor(Math.random()*(names.length))];
+	this.name = name;
 	this.x = x;
 	this.y = y;
   
@@ -200,7 +207,7 @@ var Player = function(id, name, x, y){
 
 	this.progressXP = XPtargets[0];
 	this.XP = this.progressXP;
-  this.size = 120;
+  this.size = size;
   
   this.maxHP = this.size;
   this.HP = this.maxHP;
@@ -296,6 +303,27 @@ var Player = function(id, name, x, y){
 	}
   
   this.handleCollisions = function(){
+    for (let b in bots){
+      var hitLeftSide = bots[b].x+bots[b].size/2>this.x-this.size/2 && bots[b].x-bots[b].size/2<this.x-this.size/2
+      var hitRightSide = this.x+this.size/2>bots[b].x-bots[b].size/2 && this.x+this.size/2<bots[b].x+bots[b].size/2 
+      if((hitLeftSide || hitRightSide)){
+        bots[b].HP-= this.size/5;
+        if(hitLeftSide){
+          this.bumpForce = 5
+          bots[b].bumpForce = -5
+          bots[b].isFlipped = true;
+        }else if(hitRightSide){
+          this.bumpForce = -5
+          bots[b].bumpForce = 5
+          bots[b].isFlipped = false;
+        }
+        if(bots[b].HP<=0){
+          this.XP+=bots[b].size/5;
+          this.progressXP+=bots[b].size/5;
+          this.size += ((bots[b].size/5)-XPtargets[0])/3.5;
+        }
+      }
+    }
     for(let t in players){
 			if(players[t].id != this.id){
 				var hitLeftSide = players[t].x+players[t].size/2>this.x-this.size/2 && players[t].x-players[t].size/2<this.x-this.size/2
@@ -642,6 +670,106 @@ function getAllPlayersInitPack() {
     return initPack;
 }
 
+var Bot = function(id, x, y, size){
+  this.id = id;
+  this.x = x;
+  this.y = 0;
+  this.size = size;
+  this.bumpForce = 0;
+  this.maxHP = this.size;
+  this.HP = this.size;
+  if((Math.random()*10)>5){
+    this.isFlipped = false;
+  } else{
+    this.isFlipped = true;
+  }
+  this.frontLegUp = 1;
+  this.walkSpeed = 1.3;
+  this.legDirX = 1;
+  this.legOffsetX = 0;
+  this.legOffsetY = 0;
+
+  this.animateLegs = function(){
+    this.legOffsetX+=this.walkSpeed*this.legDirX;
+    if(this.legOffsetX>0.02*this.size){
+      this.legOffsetX=(0.02*this.size);
+      this.legDirX = -1;
+      this.frontLegUp = !this.frontLegUp;
+    }else if(this.legOffsetX<-0.02*this.size){
+      this.legOffsetX=(-0.02*this.size);
+      this.legDirX = 1;
+      this.frontLegUp = !this.frontLegUp;
+    }
+  }
+
+  this.die = function(){
+    this.x = Math.random()*mapSize;
+    this.size = (Math.random()*50)+100;
+    this.maxHP = this.size;
+    this.HP = this.maxHP;
+  }
+
+  this.update = function() {
+    if(this.bumpForce != 0){ //main game physics
+      this.bumpForce *= 0.9;
+      if(Math.abs(this.bumpForce)<0.1){
+        this.bumpForce = 0;
+      }
+      if(this.x<mapSize && this.x>0){
+        this.x+=this.bumpForce;
+      }
+    }
+    if(this.HP <= 0){
+      this.die();
+    }
+    this.animateLegs();
+    if(!(this.isFlipped)){
+      this.x += this.walkSpeed;
+    } else{
+      this.x -= this.walkSpeed;
+    }
+    if(this.x<0){
+      this.isFlipped = false;
+      this.x = 0
+    }
+    if(this.x>mapSize){
+      this.isFlipped = true;
+      this.x = mapSize
+    }
+  }
+  this.getInitPack = function () {
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+    }
+  }
+  this.getUpdatePack = function () {
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      isFlipped: this.isFlipped,
+      frontLegUp: this.frontLegUp,
+      legOffsetX: this.legOffsetX,
+      legOffsetY: this.legOffsetY,
+      maxHP: this.maxHP,
+      HP: this.HP,
+    }
+  }
+  return this;
+}
+
+function getAllBotsInitPack() {
+    var botInitPack = [];
+    for(let i in bots) {
+        botInitPack.push(bots[i].getInitPack());
+    }
+    return botInitPack;
+}
+
 var Plant = function(id, x, height, hasFlower, hasLeaf){
 	this.id = id;
 	this.x = x;
@@ -731,8 +859,17 @@ setInterval(() => {
         players[i].update();
         updatePack.push(players[i].getUpdatePack());
     }
+
+    var botUpdatePack = [];
+
+    for(let i in bots) {
+        bots[i].update();
+        botUpdatePack.push(bots[i].getUpdatePack());
+    }
   
     io.emit("updatePack", {updatePack});
+
+    io.emit("botUpdatePack", {botUpdatePack});
   
 }, 35)
 

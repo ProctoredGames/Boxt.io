@@ -23,7 +23,7 @@ var mapSize = 6000;
 function preload(){
 	shellBox = loadImage('assets/shellBox.png');
 	shellDome = loadImage('assets/shellDome.png');
-  shellSpike = loadImage('assets/shellSpike.png');
+  	shellSpike = loadImage('assets/shellSpike.png');
 	// turtle = loadImage('assets/turtle.png');
 	turtleHead = loadImage('assets/turtleHead.png');
 	// turtleJaw = loadImage('assets/turtle.png');
@@ -38,7 +38,12 @@ function preload(){
 	BoxRollUI = loadImage('assets/UI/boxRollUI.png');
 	DomeRollUI = loadImage('assets/UI/domeRollUI.png');
 	SpikeRollUI = loadImage('assets/UI/spikeRollUI.png');
+
+	ladybug = loadImage('assets/ladybug.png');
+	ladybugFoot = loadImage('assets/ladybugFoot.png');
 }
+
+var botNames = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
 //first thing that is called. Sets up everything
 function setup() {
@@ -47,9 +52,13 @@ function setup() {
 
     plants = [];
 
+    bots = [];
+
     socket = io();
+
+    var playerName = botNames[Math.floor(Math.random()*(botNames.length))];
     
-    socket.emit("imReady", {name: "Boxt.io Player"}); //not actually used I dont think
+    socket.emit("imReady", {name: playerName});
 
     socket.on("yourId", function(data) {
         myId = data.id;
@@ -108,6 +117,14 @@ function setup() {
         }
     });
 
+    socket.on("botInitPack", function(data) {
+    	for(let i in data.botInitPack) {
+    		var bot = new Bot(data.botInitPack[i].id, data.botInitPack[i].x, data.botInitPack[i].y, data.botInitPack[i].size);
+    		bots.push(bot);
+    		console.log("New Bot");
+    	}
+    });
+
     socket.on("plantUpdatePack", function(data) {
         for(let i in data.plantUpdatePack) {
             for(let j in plants) {
@@ -116,6 +133,24 @@ function setup() {
             		plants[j].hasLeaf = data.plantUpdatePack[i].hasLeaf;
                 // plants[j].leaves = data.plantUpdatePack[i].leaves;
             		// console.log("updated flower state as "+plants[j].hasFlower)
+            	}
+            }
+        }
+    });
+
+    socket.on("botUpdatePack", function(data) {
+        for(let i in data.botUpdatePack) {
+            for(let j in bots) {
+            	if(bots[j].id === data.botUpdatePack[i].id) {
+            		bots[j].x = data.botUpdatePack[i].x;
+            		bots[j].y = data.botUpdatePack[i].y;
+            		bots[j].size = data.botUpdatePack[i].size;
+            		bots[j].frontLegUp = data.botUpdatePack[i].frontLegUp;
+            		bots[j].isFlipped = data.botUpdatePack[i].isFlipped;
+            		bots[j].legOffsetX = data.botUpdatePack[i].legOffsetX;
+            		bots[j].legOffsetY = data.botUpdatePack[i].legOffsetY;
+                bots[j].maxHP = data.botUpdatePack[i].maxHP;
+                bots[j].HP = data.botUpdatePack[i].HP;
             	}
             }
         }
@@ -137,7 +172,7 @@ function setup() {
 
 //called every frame
 function draw(){
-	background(0, 0, 250); // it gets a hex/rgb color
+background(0, 0, 250); // it gets a hex/rgb color
   sendInputData();
   push();
   for(let i in players) {
@@ -172,6 +207,14 @@ function draw(){
       plants[i].flower.draw();
     }
   }
+
+  for(let i in bots) {
+  	bots[i].draw();
+  	if(bots[i].HP != bots[i].maxHP){
+  		bots[i].drawStatus();
+  	}
+  }
+
   for(let i in players) {
     players[i].draw();
     if(players[i].HP != players[i].maxHP){
@@ -271,29 +314,29 @@ var Player = function(id, name, x, y, size){
     	return img;
 	}
   
-  this.drawName = function(){
-    push();
-    translate(this.x, this.y);
-    fill(0, 0, 0);
-    textSize(26);
-    textAlign(CENTER);
-    text(this.name, 0, -this.size*1.22);
-    pop();
-  }
-  
-  this.drawStatus = function(){
-    var percentage = this.HP/this.maxHP
-    if(this.HP>this.maxHP){
-      percentage = 1.00
-    }
-    push();
-    translate(this.x, this.y);
-    fill(0, 100, 0);
-    rect(-this.size/2, -this.size*1.22-27, this.size, windowWidth*0.025, 10)
-    fill(0, 250, 0);
-    rect(-this.size/2, -this.size*1.22-27, this.size*percentage, windowWidth*0.025, 10);
-    pop();
-  }
+	this.drawName = function(){
+		push();
+		translate(this.x, this.y);
+		fill(0, 0, 0);
+		textSize(26);
+		textAlign(CENTER);
+		text(this.name, 0, -this.size*1.22);
+		pop();
+	 }
+	  
+	this.drawStatus = function(){
+		var percentage = this.HP/this.maxHP
+		if(this.HP>this.maxHP){
+			percentage = 1.00
+		}
+		push();
+		translate(this.x, this.y);
+		fill(0, 100, 0);
+		rect(-this.size/2, -this.size*1.22-27, this.size, windowWidth*0.025, 10)
+		fill(0, 250, 0);
+		rect(-this.size/2, -this.size*1.22-27, this.size*percentage, windowWidth*0.025, 10);
+		pop();
+	}
 
 	this.drawUI = function(){
 		var adjustedY = ((height*0.75+this.size/3.5) - this.y);
@@ -303,55 +346,55 @@ var Player = function(id, name, x, y, size){
 		}
 		
 		fill(0, 100, 0);
-    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2, windowWidth*0.03, 20)
-    fill(0, 250, 0);
-    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2*percentage, windowWidth*0.03, 20)
+	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2, windowWidth*0.03, 20)
+	    fill(0, 250, 0);
+	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2*percentage, windowWidth*0.03, 20)
 
 
-    var c = 0; //we need to render ui positions forwards
-    for (let i = this.abilitySet.length - 1; i >= 0; i--) {
-      fill(0, 50, 0);
-      rect(windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15, 
-         windowHeight*0.85-windowWidth/30,windowWidth/15,windowWidth/15, 10);
+	    var c = 0; //we need to render ui positions forwards
+	    for (let i = this.abilitySet.length - 1; i >= 0; i--) {
+	      	fill(0, 50, 0);
+	      	rect(windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15, 
+	         	windowHeight*0.85-windowWidth/30,windowWidth/15,windowWidth/15, 10);
 
-        //we read ability list backwards
-      var tileImg;
-      tileImg = this.getAbilityImg(this.abilitySet[i]);
+	        //we read ability list backwards
+	      	var tileImg;
+	      	tileImg = this.getAbilityImg(this.abilitySet[i]);
 
-      image(tileImg, windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), //x
-          windowHeight*0.85,windowWidth/15,windowWidth/15); //y, width height
+	      	image(tileImg, windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), //x
+	          windowHeight*0.85,windowWidth/15,windowWidth/15); //y, width height
 
-      fill(0, 255, 0);
-      textSize(windowWidth/(15*6));
-      textAlign(CENTER);
-      text(this.abilitySet[i], windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), 
-         windowHeight*0.85 + windowWidth/40);
+	      	fill(0, 255, 0);
+	      	textSize(windowWidth/(15*6));
+	      	textAlign(CENTER);
+	      	text(this.abilitySet[i], windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), 
+	         windowHeight*0.85 + windowWidth/40);
 
-      c++;
-    }
+	      	c++;
+    	}
 
-    if(this.abilityCardsActive){
-      var totalMenuWidth = ((this.abilityCards.length)*(windowHeight/7)) + ((this.abilityCards.length-1)*(windowHeight/55));
-      for(let i in this.abilityCards){
-        fill(0, 50, 0);
-        rect(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55), 
-        windowHeight*0.4-windowHeight/14,windowHeight/7,windowHeight/7, 10);
+    	if(this.abilityCardsActive){
+	      	var totalMenuWidth = ((this.abilityCards.length)*(windowHeight/7)) + ((this.abilityCards.length-1)*(windowHeight/55));
+	      	for(let i in this.abilityCards){
+	        	fill(0, 50, 0);
+	        	rect(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55), 
+	        		windowHeight*0.4-windowHeight/14,windowHeight/7,windowHeight/7, 10);
 
-        var cardImg;
-        cardImg = this.getAbilityImg(this.abilityCards[i]);
+	        	var cardImg;
+	        	cardImg = this.getAbilityImg(this.abilityCards[i]);
 
-        image(cardImg, windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, //x
-            windowHeight*0.4,windowHeight/7,windowHeight/7); //y, width height
+	        	image(cardImg, windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, //x
+	            	windowHeight*0.4,windowHeight/7,windowHeight/7); //y, width height
 
-        fill(0, 255, 0);
-        textSize(windowHeight/(7*6));
-        textAlign(CENTER);
-        text(this.abilityCards[i], windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, 
-             windowHeight*0.4 + windowHeight/18);
+	        	fill(0, 255, 0);
+	        	textSize(windowHeight/(7*6));
+	        	textAlign(CENTER);
+	        	text(this.abilityCards[i], windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/14, 
+	             windowHeight*0.4 + windowHeight/18);
 
-      }
-	  }
-  }
+	      	}
+	  	}
+  	}
 
 	this.draw = function(){
 		var shellImg;
@@ -371,8 +414,8 @@ var Player = function(id, name, x, y, size){
 		}
 
 		push();
-	  translate(this.x, this.y);
-	  push();
+	  	translate(this.x, this.y);
+	  	push();
 		if(!(this.isFlipped)){
 			scale(1, 1)
 		} else{
@@ -380,28 +423,28 @@ var Player = function(id, name, x, y, size){
 		}
 		if(!(this.doingAbility && ((this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll") || this.whatAbility === "Hide"))){
 			
-      if(this.doingAbility && (this.whatAbility === "Stomp" || this.whatAbility === "Shockwave")){
-         if(this.frontLegUp){
-            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
-            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-          } else{
-            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
-          }
-      } else{
-        if(this.doMovement){
-          if(this.frontLegUp){
-            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
-            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-          } else{
-            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
-          }
-        } else{
-          image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-          image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-        }
-      }
+	      	if(this.doingAbility && (this.whatAbility === "Stomp" || this.whatAbility === "Shockwave")){
+	         	if(this.frontLegUp){
+	            	image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
+	            	image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+	          	} else{
+	            	image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+	            	image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+	          	}
+	      	} else{
+	        	if(this.doMovement){
+	          		if(this.frontLegUp){
+	            		image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
+	            		image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+	          		} else{
+	            		image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+	            		image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+	          		}
+	        	} else{
+	          		image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+	          		image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+	        	}
+	      	}
       
 			push();
 			translate(this.size*0.55, -(this.size*0.35));
@@ -414,7 +457,7 @@ var Player = function(id, name, x, y, size){
 			pop();
 		}
 		push();
-		translate(0, -(this.size/2)-(this.size/6));
+		translate(0, -(this.size/2)-(this.size/5.6));
 		if(this.doingAbility){
 			if(this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll"){
 				translate(0,0+(this.size*0.3));
@@ -429,136 +472,60 @@ var Player = function(id, name, x, y, size){
 		} else{
 			image(shellImg, 0, 0, this.size, this.size);
 		}
-    pop();
+    	pop();
 		pop();
 		pop();
-
 	}
 	return this;
 }
 
-function keyPressed() {
-	var sizeChange = 0;
-	var speedChange = 0;
-	var resetStats = false;
-	
-	var abilitySet;
-	var abilityCardsActive = false;
-	var abilityCards;
-	for(let i in players) {
-    if(players[i].id === myId) {
-        abilitySet = players[i].abilitySet;
-        abilityCardsActive = players[i].abilityCardsActive;
-        abilityCards = players[i].abilityCards;
-    }
-  }
-  var abilityCard;
-  var whatAbility;
-
-
-	if(key === "1"){
-		if(1 <= abilitySet.length){
-			whatAbility = 0; //antihack - use indices instead of ability
-			socket.emit("usedAbility", {whatAbility});
+var Bot = function(id, x, y, size){
+	this.id = id;
+	this.x = x;
+	this.y = 0;
+	this.size = 200;
+	this.isFlipped = true;
+	this.frontLegUp = true;
+	this.legOffsetX = 0;
+	this.legOffsetY = 0;
+	this.drawStatus = function(){
+		var percentage = this.HP/this.maxHP
+		if(this.HP>this.maxHP){
+			percentage = 1.00
 		}
+		push();
+		translate(this.x, this.y);
+		fill(0, 100, 0);
+		rect(-this.size/2, -this.size*1.22-27, this.size, windowWidth*0.025, 10)
+		fill(0, 250, 0);
+		rect(-this.size/2, -this.size*1.22-27, this.size*percentage, windowWidth*0.025, 10);
+		pop();
 	}
-	if(key === "2"){
-		if(2 <= abilitySet.length){
-			whatAbility = 1;
-			socket.emit("usedAbility", {whatAbility});
+	this.draw = function(){
+		push();
+		translate(this.x, this.y);
+		push();
+		if(!(this.isFlipped)){
+			scale(1, 1)
+		} else{
+			scale(-1, 1)
 		}
-	}
-	if(key === "3"){
-		if(3 <= abilitySet.length){
-			whatAbility = 2;
-			socket.emit("usedAbility", {whatAbility});
+		if(this.frontLegUp){
+			image(ladybugFoot, this.size*(-1/9+1/4)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(ladybugFoot, this.size*(-1/9)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(ladybugFoot, this.size*(-1/9-1/4)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+		} else{
+			image(ladybugFoot, this.size*(-1/9+1/4)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(ladybugFoot, this.size*(-1/9)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(ladybugFoot, this.size*(-1/9-1/4)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
 		}
+			
+		image(ladybug, 0, -this.size/2-this.size/10, this.size, this.size);
+		pop();
+		pop();
 	}
-	if(key === "4"){
-		if(4 <= abilitySet.length){
-			whatAbility = 3;
-			socket.emit("usedAbility", {whatAbility});
-		}
-	}
-	if(key === "5"){
-		if(5 <= abilitySet.length){
-			whatAbility = 4;
-			socket.emit("usedAbility", {whatAbility});
-		}
-	}
-	if(key === "6"){
-		if(6 <= abilitySet.length){
-			whatAbility = 5;
-			socket.emit("usedAbility", {whatAbility});
-		}
-	}
-	if(key === "7"){
-		if(7 <= abilitySet.length){
-			whatAbility = 6;
-			socket.emit("usedAbility", {whatAbility});
-		}
-	}
-	if(key === "8"){
-		if(8 <= abilitySet.length){
-			whatAbility = 7;
-			socket.emit("usedAbility", {whatAbility});
-		}
-	}
-	if(key === "9"){
-		if(9 <= abilitySet.length){
-			whatAbility = 8;
-			socket.emit("usedAbility", {whatAbility});
-		}
-	}
+	return this;
 }
-
-function mouseClicked() {
-  var abilityCards;
-  var abilityCardsActive;
-  var abilitySet;
-  for(let i in players) {
-    if(players[i].id === myId) {
-      abilityCards = players[i].abilityCards;
-      abilitySet = players[i].abilitySet;
-      abilityCardsActive = players[i].abilityCardsActive;
-		}
-	}
-	var abilityCard;
-	var totalMenuWidth = ((abilityCards.length)*(windowHeight/7)) + ((abilityCards.length-1)*(windowHeight/55));
-  
-	if(abilityCardsActive){
-    for(let i in abilityCards){
-      if(((windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55))<mouseX && mouseX<(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/7) && (windowHeight*0.4-windowHeight/14)<mouseY && mouseY<(windowHeight*0.4-windowHeight/14 + windowHeight/7))){
-        abilityCard = i; //antihack
-        socket.emit("choseCard", {abilityCard});
-        break;
-      }
-    }
-  }
-  
-}
-
-function sendInputData() { //client specific p5 stuff that the server cant get
-	var headAngle;
-
-	for(let i in players) {
-        if(players[i].id === myId) {
-    		headAngle = atan2(mouseY-(height*0.75+players[i].size*-0.1), mouseX-(width/2)); //headAngle from head level
-    	}
-    }
-
-	var distXToMouse = Math.abs(mouseX-(width/2));
-
-	let isFlipped;
-	if(mouseX>(width/2)){
-		isFlipped = false;
-	} else{
-		isFlipped = true;
-	}
-
-	socket.emit("inputData", {mouseX, mouseY, headAngle, distXToMouse, isFlipped, windowWidth, windowHeight});
-}
-
 
 var Plant = function(id, x, height, hasFlower, hasLeaf){
 	this.id = id;
@@ -622,4 +589,127 @@ var Leaf = function(x, y, isFlipped){
 		pop();
 	}
 	return this;
+}
+
+
+
+function keyPressed() {
+	var sizeChange = 0;
+	var speedChange = 0;
+	var resetStats = false;
+	
+	var abilitySet;
+	var abilityCardsActive = false;
+	var abilityCards;
+	for(let i in players) {
+	    if(players[i].id === myId) {
+	        abilitySet = players[i].abilitySet;
+	        abilityCardsActive = players[i].abilityCardsActive;
+	        abilityCards = players[i].abilityCards;
+	    }
+  	}
+  	var abilityCard;
+  	var whatAbility;
+
+
+	if(key === "1"){
+		if(1 <= abilitySet.length){
+			whatAbility = 0; //antihack - use indices instead of ability
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "2"){
+		if(2 <= abilitySet.length){
+			whatAbility = 1;
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "3"){
+		if(3 <= abilitySet.length){
+			whatAbility = 2;
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "4"){
+		if(4 <= abilitySet.length){
+			whatAbility = 3;
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "5"){
+		if(5 <= abilitySet.length){
+			whatAbility = 4;
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "6"){
+		if(6 <= abilitySet.length){
+			whatAbility = 5;
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "7"){
+		if(7 <= abilitySet.length){
+			whatAbility = 6;
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "8"){
+		if(8 <= abilitySet.length){
+			whatAbility = 7;
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+	if(key === "9"){
+		if(9 <= abilitySet.length){
+			whatAbility = 8;
+			socket.emit("usedAbility", {whatAbility});
+		}
+	}
+}
+
+function mouseClicked() {
+  	var abilityCards;
+  	var abilityCardsActive;
+  	var abilitySet;
+  	for(let i in players) {
+    	if(players[i].id === myId) {
+      		abilityCards = players[i].abilityCards;
+      		abilitySet = players[i].abilitySet;
+      		abilityCardsActive = players[i].abilityCardsActive;
+		}
+	}
+	var abilityCard;
+	var totalMenuWidth = ((abilityCards.length)*(windowHeight/7)) + ((abilityCards.length-1)*(windowHeight/55));
+  
+	if(abilityCardsActive){
+    	for(let i in abilityCards){
+     		if(((windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55))<mouseX && mouseX<(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/7) && (windowHeight*0.4-windowHeight/14)<mouseY && mouseY<(windowHeight*0.4-windowHeight/14 + windowHeight/7))){
+        		abilityCard = i;
+        		socket.emit("choseCard", {abilityCard});
+        		break;
+      		}
+    	}
+  	}
+}
+
+function sendInputData() { //client specific p5 stuff that the server cant get
+	var headAngle;
+
+	for(let i in players) {
+        if(players[i].id === myId) {
+    		headAngle = atan2(mouseY-(height*0.75+players[i].size*-0.1), mouseX-(width/2)); //headAngle from head level
+    	}
+    }
+
+	var distXToMouse = Math.abs(mouseX-(width/2));
+
+	let isFlipped;
+	if(mouseX>(width/2)){
+		isFlipped = false;
+	} else{
+		isFlipped = true;
+	}
+
+	socket.emit("inputData", {mouseX, mouseY, headAngle, distXToMouse, isFlipped, windowWidth, windowHeight});
 }
