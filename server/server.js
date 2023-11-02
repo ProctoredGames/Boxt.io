@@ -23,7 +23,7 @@ var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 server.listen(port, function(){//when the server starts, generate the map with this function
 	var plant = {};
 	for(let i = 0; i< (mapSize/100); i++){
-		plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+200, true, true);
+		plant = new Plant(i, Math.random()*mapSize, (Math.random()*250)+250, true, true);
 		plants.push(plant);
 	}
   var bot = {};
@@ -137,7 +137,8 @@ io.on('connection', function(socket) {
         player.upgrade = 4;
         break;
       case 4: //Grow Turtle!
-        player.size += 50
+        player.XP += 100
+        player.size = player.getSize();
         player.upgrade = 2;
         break;
       default:
@@ -262,6 +263,14 @@ var Player = function(id, name, x, y, size){
 			return this.walkSpeed
 		}
 	}
+  
+  this.getSize = function(){
+    var modifier = 2000;
+    var startingSize = 120;
+    var maxSize = 1000;
+    return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
+    
+  }
 
 	this.doUpgrade = function(upgrade){
 		if(!(this.abilityCardsActive)){
@@ -306,7 +315,7 @@ var Player = function(id, name, x, y, size){
     for (let b in bots){
       var hitLeftSide = bots[b].x+bots[b].size/2>this.x-this.size/2 && bots[b].x-bots[b].size/2<this.x-this.size/2
       var hitRightSide = this.x+this.size/2>bots[b].x-bots[b].size/2 && this.x+this.size/2<bots[b].x+bots[b].size/2 
-      var waySmallerThanYou = (this.size/bots[b].size)>5
+      var waySmallerThanYou = (this.size/bots[b].size)>4.5
       if((hitLeftSide || hitRightSide) && ! waySmallerThanYou){
         bots[b].HP-= this.size/5;
         if(hitLeftSide){
@@ -318,16 +327,15 @@ var Player = function(id, name, x, y, size){
           bots[b].bumpForce = 5
           bots[b].isFlipped = false;
         }
+        
         if(bots[b].HP<=0){
-          this.XP+=bots[b].size/3.5;
-          this.progressXP+=bots[b].size/3.5;
-          this.size += ((bots[b].size/3.5)-XPtargets[0])/5; //bad xp source
-          this.HP += (this.maxHP/2);
-            if(this.HP>this.maxHP){
-              this.HP = this.maxHP;
-          }
-          bots[b].die();
+          this.XP+=bots[b].size/5;
+          this.progressXP+=bots[b].size/5;
+          this.size = this.getSize();
           
+          this.HP += (this.maxHP/3); //for eating the ladybug
+          
+          bots[b].die();
         }
       }
     }
@@ -375,13 +383,8 @@ var Player = function(id, name, x, y, size){
               if(players[t].HP<=0){
                 this.XP += players[t].XP;
                 this.progressXP += players[t].XP;
-                this.size += (players[t].XP-XPtargets[0])/3.5;
-                var ratio = this.size/this.maxHP;
-                this.maxHP = this.size;
-                this.HP *= ratio; //scales HP with size
-                if((this.HP+0.01)>this.maxHP){
-                  this.HP = this.maxHP;
-                }
+                this.size = this.getSize();
+                
                 players[t].die();
               }
             }
@@ -391,13 +394,8 @@ var Player = function(id, name, x, y, size){
               if(this.HP<=0){
                 players[t].XP += this.XP;
                 players[t].progressXP += this.XP;
-                players[t].size += (players[t].XP-XPtargets[0])/3.5;
-                var ratio = players[t].size/players[t].maxHP;
-                players[t].maxHP = players[t].size;
-                players[t].HP *= ratio; //scales HP with size
-                if((this.HP+0.01)>this.maxHP){
-                  this.HP = this.maxHP;
-                }
+                players[t].size = players[t].getSize();
+                
                 this.die();
               }
             }
@@ -407,7 +405,7 @@ var Player = function(id, name, x, y, size){
 		}
   }
   
-	this.handleXP = function(){
+	this.handlePlantXP = function(){
 		var headX;
 		var headY;
 		var range;
@@ -424,19 +422,12 @@ var Player = function(id, name, x, y, size){
         if(Math.sqrt(Math.pow(headX-plants[i].flower.x,2)+Math.pow(headY-plants[i].flower.y,2))< (range+plants[i].flower.size/2)){
           if(plants[i].hasFlower){
             plants[i].hasFlower = false;
-            this.progressXP+= plants[i].flower.XP;
             this.XP+= plants[i].flower.XP;
-            this.size+= (plants[i].flower.XP)/5;
-            this.HP += (this.maxHP/20); //for eating the flower
-            if(this.HP>this.maxHP){
-              this.HP = this.maxHP;
-            }
-            var ratio = this.size/this.maxHP;
-            this.maxHP = this.size;
-            this.HP *= ratio; //scales HP with size
-            if((this.HP+0.01)>this.maxHP){
-              this.HP = this.maxHP;
-            }
+            this.progressXP+= plants[i].flower.XP;
+            this.size = this.getSize();
+            
+            this.HP += (this.maxHP/10); //for eating the flower
+
             sendPlantUpdate();
           } 
         }
@@ -444,15 +435,10 @@ var Player = function(id, name, x, y, size){
           if(Math.sqrt(Math.pow(headX-plants[i].leaves[j].x,2)+Math.pow(headY-plants[i].leaves[j].y,2))< (range+plants[i].leaves[j].size/2)){
             if(plants[i].hasLeaf[j]){
               plants[i].hasLeaf[j] = false;
-              this.progressXP+= plants[i].leaves[j].XP;
               this.XP+= plants[i].leaves[j].XP;
-              this.size+= (plants[i].leaves[j].XP)/5;
-              var ratio = this.size/this.maxHP;
-              this.maxHP = this.size;
-              this.HP *= ratio; //scales HP with size
-              if((this.HP+0.01)>this.maxHP){
-                this.HP = this.maxHP;
-              }
+              this.progressXP+= plants[i].leaves[j].XP;
+              this.size = this.getSize();
+              
               sendPlantUpdate();
             } 
           }
@@ -584,15 +570,14 @@ var Player = function(id, name, x, y, size){
   }
 
 	this.update = function(){
-    if(this.HP>this.maxHP){
-      this.HP = this.maxHP;
-    }
+    
     var ratio = this.size/this.maxHP;
     this.maxHP = this.size;
     this.HP *= ratio; //scales HP with size
     if((this.HP+0.01)>this.maxHP){
       this.HP = this.maxHP;
     }
+    
     if(this.bumpForce != 0){ //main game physics
       this.bumpForce *= 0.9;
       if(Math.abs(this.bumpForce)<0.1){
@@ -602,21 +587,18 @@ var Player = function(id, name, x, y, size){
         this.x+=this.bumpForce;
       }
     }
+    
 		if(this.distXToMouse<this.size*detectionRange){
 			this.doMovement = false;
 		} else{
 			this.doMovement = true;
 		}
-    this.handleXP();
+    this.handlePlantXP();
 		if(this.doingAbility){
 			this.playAbility(this.whatAbility); //this can overwrite anything
 		}
     this.animateLegs();
     this.handleCollisions();
-    
-    if(this.HP <= 0){
-      this.die();
-    }
     
 		if(this.doMovement){
 			if (!(this.isFlipped)) {
@@ -693,7 +675,7 @@ var Bot = function(id, x, y, size){
     this.isFlipped = true;
   }
   this.frontLegUp = 1;
-  this.walkSpeed = 1.25;
+  this.walkSpeed = 1.15;
   this.legDirX = 1;
   this.legOffsetX = 0;
   this.legOffsetY = 0;
@@ -727,9 +709,6 @@ var Bot = function(id, x, y, size){
       if(this.x<mapSize && this.x>0){
         this.x+=this.bumpForce;
       }
-    }
-    if(this.HP <= 0){
-      this.die();
     }
     this.animateLegs();
     if(!(this.isFlipped)){
