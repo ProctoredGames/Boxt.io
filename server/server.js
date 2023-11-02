@@ -306,7 +306,8 @@ var Player = function(id, name, x, y, size){
     for (let b in bots){
       var hitLeftSide = bots[b].x+bots[b].size/2>this.x-this.size/2 && bots[b].x-bots[b].size/2<this.x-this.size/2
       var hitRightSide = this.x+this.size/2>bots[b].x-bots[b].size/2 && this.x+this.size/2<bots[b].x+bots[b].size/2 
-      if((hitLeftSide || hitRightSide)){
+      var waySmallerThanYou = (this.size/bots[b].size)>5
+      if((hitLeftSide || hitRightSide) && ! waySmallerThanYou){
         bots[b].HP-= this.size/5;
         if(hitLeftSide){
           this.bumpForce = 5
@@ -320,8 +321,13 @@ var Player = function(id, name, x, y, size){
         if(bots[b].HP<=0){
           this.XP+=bots[b].size/3.5;
           this.progressXP+=bots[b].size/3.5;
-          this.size += ((bots[b].size/3.5)-XPtargets[0])/3.5;
+          this.size += ((bots[b].size/3.5)-XPtargets[0])/5; //bad xp source
+          this.HP += (this.maxHP/2);
+            if(this.HP>this.maxHP){
+              this.HP = this.maxHP;
+          }
           bots[b].die();
+          
         }
       }
     }
@@ -687,7 +693,7 @@ var Bot = function(id, x, y, size){
     this.isFlipped = true;
   }
   this.frontLegUp = 1;
-  this.walkSpeed = 1.3;
+  this.walkSpeed = 1.25;
   this.legDirX = 1;
   this.legOffsetX = 0;
   this.legOffsetY = 0;

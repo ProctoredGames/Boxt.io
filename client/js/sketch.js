@@ -457,7 +457,7 @@ var Player = function(id, name, x, y, size){
 			pop();
 		}
 		push();
-		translate(0, -(this.size/2)-(this.size/5.6));
+		translate(0, -(this.size/2)-(this.size/6));
 		if(this.doingAbility){
 			if(this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll"){
 				translate(0,0+(this.size*0.3));
