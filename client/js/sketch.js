@@ -206,16 +206,16 @@ background(0, 0, 250); // it gets a hex/rgb color
     }
   }
 
+  for(let i in bots) {
+  	bots[i].draw();
+  }
+
   for(let i in players) {
     players[i].draw();
     if(players[i].HP != players[i].maxHP){
       players[i].drawStatus();
     }
     players[i].drawName();
-  }
-
-  for(let i in bots) {
-  	bots[i].draw();
   }
 
   pop();

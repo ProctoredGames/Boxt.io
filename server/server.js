@@ -303,6 +303,21 @@ var Player = function(id, name, x, y, size){
 	}
   
   this.handleCollisions = function(){
+    for (let b in bots){
+      var hitLeftSide = bots[b].x+bots[b].size/2>this.x-this.size/2 && bots[b].x-bots[b].size/2<this.x-this.size/2
+      var hitRightSide = this.x+this.size/2>bots[b].x-bots[b].size/2 && this.x+this.size/2<bots[b].x+bots[b].size/2 
+      if((hitLeftSide || hitRightSide)){
+        if(hitLeftSide){
+          this.bumpForce = 5
+          bots[b].bumpForce = -5
+          bots[b].isFlipped = true;
+        }else if(hitRightSide){
+          this.bumpForce = -5
+          bots[b].bumpForce = 5
+          bots[b].isFlipped = false;
+        }
+      }
+    }
     for(let t in players){
 			if(players[t].id != this.id){
 				var hitLeftSide = players[t].x+players[t].size/2>this.x-this.size/2 && players[t].x-players[t].size/2<this.x-this.size/2
@@ -654,6 +669,7 @@ var Bot = function(id, x, y, size){
   this.x = x;
   this.y = 0;
   this.size = size;
+  this.bumpForce = 0;
   if((Math.random()*10)>5){
     this.isFlipped = false;
   } else{
@@ -679,6 +695,15 @@ var Bot = function(id, x, y, size){
   }
 
   this.update = function() {
+    if(this.bumpForce != 0){ //main game physics
+      this.bumpForce *= 0.9;
+      if(Math.abs(this.bumpForce)<0.1){
+        this.bumpForce = 0;
+      }
+      if(this.x<mapSize && this.x>0){
+        this.x+=this.bumpForce;
+      }
+    }
     this.animateLegs();
     if(!(this.isFlipped)){
       this.x += this.walkSpeed;
