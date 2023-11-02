@@ -27,7 +27,7 @@ server.listen(port, function(){//when the server starts, generate the map with t
 		plants.push(plant);
 	}
   var bot = {};
-  for(let i = 0; i<6; i++){
+  for(let i = 0; i<4; i++){
     bot = new Bot(i, (Math.random()*mapSize), 0, ((Math.random()*120)+50));
     bots.push(bot);
   }
@@ -318,9 +318,10 @@ var Player = function(id, name, x, y, size){
           bots[b].isFlipped = false;
         }
         if(bots[b].HP<=0){
-          this.XP+=bots[b].size/5;
-          this.progressXP+=bots[b].size/5;
-          this.size += ((bots[b].size/5)-XPtargets[0])/3.5;
+          this.XP+=bots[b].size/3.5;
+          this.progressXP+=bots[b].size/3.5;
+          this.size += ((bots[b].size/3.5)-XPtargets[0])/3.5;
+          bots[b].die();
         }
       }
     }
@@ -375,6 +376,7 @@ var Player = function(id, name, x, y, size){
                 if((this.HP+0.01)>this.maxHP){
                   this.HP = this.maxHP;
                 }
+                players[t].die();
               }
             }
             if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
@@ -390,6 +392,7 @@ var Player = function(id, name, x, y, size){
                 if((this.HP+0.01)>this.maxHP){
                   this.HP = this.maxHP;
                 }
+                this.die();
               }
             }
           }
@@ -417,7 +420,7 @@ var Player = function(id, name, x, y, size){
             plants[i].hasFlower = false;
             this.progressXP+= plants[i].flower.XP;
             this.XP+= plants[i].flower.XP;
-            this.size+= (plants[i].flower.XP)/3.5;
+            this.size+= (plants[i].flower.XP)/5;
             this.HP += (this.maxHP/20); //for eating the flower
             if(this.HP>this.maxHP){
               this.HP = this.maxHP;
@@ -437,7 +440,7 @@ var Player = function(id, name, x, y, size){
               plants[i].hasLeaf[j] = false;
               this.progressXP+= plants[i].leaves[j].XP;
               this.XP+= plants[i].leaves[j].XP;
-              this.size+= (plants[i].leaves[j].XP)/3.5;
+              this.size+= (plants[i].leaves[j].XP)/5;
               var ratio = this.size/this.maxHP;
               this.maxHP = this.size;
               this.HP *= ratio; //scales HP with size
