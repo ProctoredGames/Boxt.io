@@ -13,6 +13,7 @@ app.use(express.static(publicPath));
 
 var players = [];
 var plants = [];
+var bots = [];
 
 //needs to be changed in BOTH server and client
 var mapSize = 6000;
@@ -25,15 +26,20 @@ server.listen(port, function(){//when the server starts, generate the map with t
 		plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+200, true, true);
 		plants.push(plant);
 	}
+  var bot = {};
+  for(let i = 0; i<7; i++){
+    bot = new Bot(i, (Math.random()*mapSize), 0, ((Math.random()*120)+50));
+    bots.push(bot);
+  }
 	console.log("Server Started on port "+ port +"!");
 });
 
 io.on('connection', function(socket) {
-    console.log('someone conencted, Id: ' + socket.id);
+    console.log('someone connected, Id: ' + socket.id);
     var player = {};
     
     socket.on("imReady", (data) => { //player joins
-        player = new Player(socket.id, data.name,  Math.random() * mapSize,0);
+        player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 120);
         players.push(player);
 
         socket.emit("yourId", {id: player.id});
@@ -41,6 +47,7 @@ io.on('connection', function(socket) {
 
         socket.emit("initPack", {initPack: getAllPlayersInitPack()});
         socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
+        socket.emit("botInitPack", {botInitPack: getAllBotsInitPack()});
     });
 
     socket.on("inputData", (data) => {
@@ -119,8 +126,6 @@ io.on('connection', function(socket) {
       
       player.progressXP = player.progressXP-player.targetXP;
       player.targetXP += XPtargets[player.upgrade];
-      player.HP *= ((player.XP/2)/player.maxHP)
-      player.maxHP = player.XP/2;
       switch(player.upgrade){
       case 1:
         player.upgrade = 2;
@@ -183,9 +188,9 @@ var SpikeRollAngle = (3.14159/2)/SpikeRollTime;
 
 var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
-var Player = function(id, name, x, y){
+var Player = function(id, name, x, y, size){
 	this.id = id;
-	this.name = names[Math.floor(Math.random()*(names.length))];
+	this.name = name;
 	this.x = x;
 	this.y = y;
   
@@ -202,13 +207,13 @@ var Player = function(id, name, x, y){
 
 	this.progressXP = XPtargets[0];
 	this.XP = this.progressXP;
+  this.size = size;
   
-  this.maxHP = this.XP;
+  this.maxHP = this.size;
   this.HP = this.maxHP;
   
 	this.upgrade = 1; //player on first upgrade
 	this.targetXP = XPtargets[this.upgrade];
-	this.size = 120;
 	this.walkSpeed = 1.5;
 	this.velY = 0;
 	this.legOffsetX = 0;
@@ -338,20 +343,32 @@ var Player = function(id, name, x, y){
             //we need to check everything for both players as the one first in the array will check first
             if((this.isFlipped && players[t].isFlipped && hitLeftSide) || (this.isFlipped && !players[t].isFlipped && hitLeftSide) ||
               (!this.isFlipped && players[t].isFlipped && hitRightSide) || (!this.isFlipped && !players[t].isFlipped && hitRightSide)){
-              players[t].HP-= this.XP/5;
+              players[t].HP-= this.size/5;
               if(players[t].HP<=0){
                 this.XP += players[t].XP;
                 this.progressXP += players[t].XP;
                 this.size += (players[t].XP-XPtargets[0])/3.5;
+                var ratio = this.size/this.maxHP;
+                this.maxHP = this.size;
+                this.HP *= ratio; //scales HP with size
+                if((this.HP+0.01)>this.maxHP){
+                  this.HP = this.maxHP;
+                }
               }
             }
             if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
               (players[t].isFlipped && !this.isFlipped && hitRightSide) || (players[t].isFlipped && this.isFlipped && hitRightSide)){
-              this.HP-= players[t].XP/5;
+              this.HP-= players[t].size/5;
               if(this.HP<=0){
                 players[t].XP += this.XP;
                 players[t].progressXP += this.XP;
-                players[t].size += (this.XP-XPtargets[0])/3.5;
+                players[t].size += (players[t].XP-XPtargets[0])/3.5;
+                var ratio = players[t].size/players[t].maxHP;
+                players[t].maxHP = players[t].size;
+                players[t].HP *= ratio; //scales HP with size
+                if((this.HP+0.01)>this.maxHP){
+                  this.HP = this.maxHP;
+                }
               }
             }
           }
@@ -380,6 +397,16 @@ var Player = function(id, name, x, y){
             this.progressXP+= plants[i].flower.XP;
             this.XP+= plants[i].flower.XP;
             this.size+= (plants[i].flower.XP)/3.5;
+            this.HP += (this.maxHP/20); //for eating the flower
+            if(this.HP>this.maxHP){
+              this.HP = this.maxHP;
+            }
+            var ratio = this.size/this.maxHP;
+            this.maxHP = this.size;
+            this.HP *= ratio; //scales HP with size
+            if((this.HP+0.01)>this.maxHP){
+              this.HP = this.maxHP;
+            }
             sendPlantUpdate();
           } 
         }
@@ -390,6 +417,12 @@ var Player = function(id, name, x, y){
               this.progressXP+= plants[i].leaves[j].XP;
               this.XP+= plants[i].leaves[j].XP;
               this.size+= (plants[i].leaves[j].XP)/3.5;
+              var ratio = this.size/this.maxHP;
+              this.maxHP = this.size;
+              this.HP *= ratio; //scales HP with size
+              if((this.HP+0.01)>this.maxHP){
+                this.HP = this.maxHP;
+              }
               sendPlantUpdate();
             } 
           }
@@ -497,7 +530,7 @@ var Player = function(id, name, x, y){
     this.abilityCardsActive = false;
     this.abilityCards = [];
     this.abilitySet = [];
-    this.maxHP = XPtargets[0];
+    this.maxHP = this.size;
     this.HP = this.maxHP;
   }
   
@@ -521,6 +554,15 @@ var Player = function(id, name, x, y){
   }
 
 	this.update = function(){
+    if(this.HP>this.maxHP){
+      this.HP = this.maxHP;
+    }
+    var ratio = this.size/this.maxHP;
+    this.maxHP = this.size;
+    this.HP *= ratio; //scales HP with size
+    if((this.HP+0.01)>this.maxHP){
+      this.HP = this.maxHP;
+    }
     if(this.bumpForce != 0){ //main game physics
       this.bumpForce *= 0.9;
       if(Math.abs(this.bumpForce)<0.1){
@@ -605,6 +647,82 @@ function getAllPlayersInitPack() {
         initPack.push(players[i].getInitPack());
     }
     return initPack;
+}
+
+var Bot = function(id, x, y, size){
+  this.id = id;
+  this.x = x;
+  this.y = 0;
+  this.size = size;
+  if((Math.random()*10)>5){
+    this.isFlipped = false;
+  } else{
+    this.isFlipped = true;
+  }
+  this.frontLegUp = 1;
+  this.walkSpeed = 1.5;
+  this.legDirX = 1;
+  this.legOffsetX = 0;
+  this.legOffsetY = 0;
+
+  this.animateLegs = function(){
+    this.legOffsetX+=this.walkSpeed*this.legDirX;
+    if(this.legOffsetX>0.02*this.size){
+      this.legOffsetX=(0.02*this.size);
+      this.legDirX = -1;
+      this.frontLegUp = !this.frontLegUp;
+    }else if(this.legOffsetX<-0.02*this.size){
+      this.legOffsetX=(-0.02*this.size);
+      this.legDirX = 1;
+      this.frontLegUp = !this.frontLegUp;
+    }
+  }
+
+  this.update = function() {
+    this.animateLegs();
+    if(!(this.isFlipped)){
+      this.x += this.walkSpeed;
+    } else{
+      this.x -= this.walkSpeed;
+    }
+    if(this.x<0){
+      this.isFlipped = false;
+      this.x = 0
+    }
+    if(this.x>mapSize){
+      this.isFlipped = true;
+      this.x = mapSize
+    }
+  }
+  this.getInitPack = function () {
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+    }
+  }
+  this.getUpdatePack = function () {
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      isFlipped: this.isFlipped,
+      frontLegUp: this.frontLegUp,
+      legOffsetX: this.legOffsetX,
+      legOffsetY: this.legOffsetY,
+    }
+  }
+  return this;
+}
+
+function getAllBotsInitPack() {
+    var botInitPack = [];
+    for(let i in bots) {
+        botInitPack.push(bots[i].getInitPack());
+    }
+    return botInitPack;
 }
 
 var Plant = function(id, x, height, hasFlower, hasLeaf){
@@ -696,8 +814,17 @@ setInterval(() => {
         players[i].update();
         updatePack.push(players[i].getUpdatePack());
     }
+
+    var botUpdatePack = [];
+
+    for(let i in bots) {
+        bots[i].update();
+        botUpdatePack.push(bots[i].getUpdatePack());
+    }
   
     io.emit("updatePack", {updatePack});
+
+    io.emit("botUpdatePack", {botUpdatePack});
   
 }, 35)
 
