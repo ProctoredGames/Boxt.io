@@ -15,8 +15,6 @@ var shellBox, shellDome, shellSpike;
 var turtle, turtleHead, turtleJaw, turtleFoot, turtleTail;
 var stem, leaf, flowerWhite, flowerYellow;
 var HideUI, BoxRollUI, DomeRollUI, SpikeRollUI;
-var ladybug, ladybugFoot;
-var cracks;
 
 //needs to be changed in BOTH server and client
 var mapSize = 6000;
@@ -43,8 +41,6 @@ function preload(){
 
 	ladybug = loadImage('assets/ladybug.png');
 	ladybugFoot = loadImage('assets/ladybugFoot.png');
-  
-  cracks = loadImage('assets/cracks.png');
 }
 
 var botNames = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
