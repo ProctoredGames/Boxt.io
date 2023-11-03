@@ -414,37 +414,36 @@ var Player = function(id, name, x, y, size){
 		}
 
 		push();
-	  	translate(this.x, this.y);
-	  	push();
+    translate(this.x, this.y);
+    push();
 		if(!(this.isFlipped)){
 			scale(1, 1)
 		} else{
 			scale(-1, 1)
 		}
 		if(!(this.doingAbility && ((this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll") || this.whatAbility === "Hide"))){
-			
-	      	if(this.doingAbility && (this.whatAbility === "Stomp" || this.whatAbility === "Shockwave")){
-	         	if(this.frontLegUp){
-	            	image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
-	            	image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-	          	} else{
-	            	image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-	            	image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
-	          	}
-	      	} else{
-	        	if(this.doMovement){
-	          		if(this.frontLegUp){
-	            		image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
-	            		image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-	          		} else{
-	            		image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-	            		image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
-	          		}
-	        	} else{
-	          		image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-	          		image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-	        	}
-	      	}
+      if(this.doingAbility && (this.whatAbility === "Stomp" || this.whatAbility === "Shockwave")){
+        if(this.frontLegUp){
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+          } else{
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+          }
+      } else{
+        if(this.doMovement){
+            if(this.frontLegUp){
+              image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
+              image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+            } else{
+              image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+              image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+            }
+        } else{
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+        }
+      }
       
 			push();
 			translate(this.size*0.55, -(this.size*0.35));
