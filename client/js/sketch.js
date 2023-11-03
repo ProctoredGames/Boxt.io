@@ -149,6 +149,8 @@ function setup() {
             		bots[j].isFlipped = data.botUpdatePack[i].isFlipped;
             		bots[j].legOffsetX = data.botUpdatePack[i].legOffsetX;
             		bots[j].legOffsetY = data.botUpdatePack[i].legOffsetY;
+                bots[j].maxHP = data.botUpdatePack[i].maxHP;
+                bots[j].HP = data.botUpdatePack[i].HP;
             	}
             }
         }
@@ -208,6 +210,9 @@ background(0, 0, 250); // it gets a hex/rgb color
 
   for(let i in bots) {
   	bots[i].draw();
+  	if(bots[i].HP != bots[i].maxHP){
+  		bots[i].drawStatus();
+  	}
   }
 
   for(let i in players) {
@@ -409,37 +414,36 @@ var Player = function(id, name, x, y, size){
 		}
 
 		push();
-	  	translate(this.x, this.y);
-	  	push();
+    translate(this.x, this.y);
+    push();
 		if(!(this.isFlipped)){
 			scale(1, 1)
 		} else{
 			scale(-1, 1)
 		}
 		if(!(this.doingAbility && ((this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll") || this.whatAbility === "Hide"))){
-			
-	      	if(this.doingAbility && (this.whatAbility === "Stomp" || this.whatAbility === "Shockwave")){
-	         	if(this.frontLegUp){
-	            	image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
-	            	image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-	          	} else{
-	            	image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-	            	image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
-	          	}
-	      	} else{
-	        	if(this.doMovement){
-	          		if(this.frontLegUp){
-	            		image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
-	            		image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-	          		} else{
-	            		image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-	            		image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
-	          		}
-	        	} else{
-	          		image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-	          		image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
-	        	}
-	      	}
+      if(this.doingAbility && (this.whatAbility === "Stomp" || this.whatAbility === "Shockwave")){
+        if(this.frontLegUp){
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+          } else{
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+          }
+      } else{
+        if(this.doMovement){
+            if(this.frontLegUp){
+              image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
+              image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+            } else{
+              image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+              image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+            }
+        } else{
+            image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+            image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+        }
+      }
       
 			push();
 			translate(this.size*0.55, -(this.size*0.35));
@@ -452,7 +456,7 @@ var Player = function(id, name, x, y, size){
 			pop();
 		}
 		push();
-		translate(0, -(this.size/2)-(this.size/5.6));
+		translate(0, -(this.size/2)-(this.size/6));
 		if(this.doingAbility){
 			if(this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll"){
 				translate(0,0+(this.size*0.3));
@@ -483,6 +487,19 @@ var Bot = function(id, x, y, size){
 	this.frontLegUp = true;
 	this.legOffsetX = 0;
 	this.legOffsetY = 0;
+	this.drawStatus = function(){
+		var percentage = this.HP/this.maxHP
+		if(this.HP>this.maxHP){
+			percentage = 1.00
+		}
+		push();
+		translate(this.x, this.y);
+		fill(0, 100, 0);
+		rect(-this.size/2, -this.size*1.22-27, this.size, windowWidth*0.025, 10)
+		fill(0, 250, 0);
+		rect(-this.size/2, -this.size*1.22-27, this.size*percentage, windowWidth*0.025, 10);
+		pop();
+	}
 	this.draw = function(){
 		push();
 		translate(this.x, this.y);
