@@ -23,11 +23,11 @@ var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 server.listen(port, function(){//when the server starts, generate the map with this function
 	var plant = {};
 	for(let i = 0; i< (mapSize/100); i++){
-		plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+200, true, true);
+		plant = new Plant(i, Math.random()*mapSize, (Math.random()*250)+250, true, true);
 		plants.push(plant);
 	}
   var bot = {};
-  for(let i = 0; i<7; i++){
+  for(let i = 0; i<4; i++){
     bot = new Bot(i, (Math.random()*mapSize), 0, ((Math.random()*120)+50));
     bots.push(bot);
   }
@@ -96,7 +96,7 @@ io.on('connection', function(socket) {
 				player.abilityTimer = JumpStompTime;
 				break;
 			case "Shockwave":
-				player.abilityTimer =ShockwaveTime;
+				player.abilityTimer = ShockwaveTime;
 				break;
       case "Dash":
 				player.abilityTimer = DashTime;
@@ -137,7 +137,8 @@ io.on('connection', function(socket) {
         player.upgrade = 4;
         break;
       case 4: //Grow Turtle!
-        player.size += 50
+        player.XP += 100
+        player.size = player.getSize();
         player.upgrade = 2;
         break;
       default:
@@ -177,7 +178,7 @@ var DomeRollTime = 40;
 var SpikeRollTime = 10;
 var HideTime = 120;
 var StompTime = 5;
-var JumpStompTime = 1; //testing
+var JumpStompTime = 1; //only jumps once
 var ShockwaveTime = 10;
 var DashTime = 30;
 var ChargeTime = 20;
@@ -199,7 +200,7 @@ var Player = function(id, name, x, y, size){
 	this.doingAbility = false;
 	this.abilityTimer;
 	this.whatAbility;
-	this.abilitySet = [];
+	this.abilitySet = ["JumpStomp"];
 	this.bodyAngle = 0;
 
 	this.abilityCards = [];
@@ -208,6 +209,11 @@ var Player = function(id, name, x, y, size){
 	this.progressXP = XPtargets[0];
 	this.XP = this.progressXP;
   this.size = size;
+  
+  this.isJumping = false;
+  this.jumpForce = 50;
+  this.jumpDelta = this.jumpForce;
+  this.gravity = 5;
   
   this.maxHP = this.size;
   this.HP = this.maxHP;
@@ -230,6 +236,9 @@ var Player = function(id, name, x, y, size){
 	this.windowHeight;
 
 	this.getSpeed = function(){
+    if(this.isJumping){
+      return this.walkSpeed*6
+    }
 		if(this.doingAbility){
 			switch(this.whatAbility){
 			case "BoxRoll":
@@ -243,6 +252,9 @@ var Player = function(id, name, x, y, size){
         break;
       case "Stomp":
 				return this.walkSpeed/2;
+        break;
+      case "JumpStomp":
+				return 0;
         break;
       case "Shockwave":
 				return this.walkSpeed/2;
@@ -262,6 +274,14 @@ var Player = function(id, name, x, y, size){
 			return this.walkSpeed
 		}
 	}
+  
+  this.getSize = function(){
+    var modifier = 3000;
+    var startingSize = 120;
+    var maxSize = 1000;
+    return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
+    
+  }
 
 	this.doUpgrade = function(upgrade){
 		if(!(this.abilityCardsActive)){
@@ -306,7 +326,9 @@ var Player = function(id, name, x, y, size){
     for (let b in bots){
       var hitLeftSide = bots[b].x+bots[b].size/2>this.x-this.size/2 && bots[b].x-bots[b].size/2<this.x-this.size/2
       var hitRightSide = this.x+this.size/2>bots[b].x-bots[b].size/2 && this.x+this.size/2<bots[b].x+bots[b].size/2 
-      if((hitLeftSide || hitRightSide)){
+      var waySmallerThanYou = (this.size/bots[b].size)>4.5
+      if((hitLeftSide || hitRightSide) && ! waySmallerThanYou){
+        bots[b].HP-= this.size/5;
         if(hitLeftSide){
           this.bumpForce = 5
           bots[b].bumpForce = -5
@@ -315,6 +337,16 @@ var Player = function(id, name, x, y, size){
           this.bumpForce = -5
           bots[b].bumpForce = 5
           bots[b].isFlipped = false;
+        }
+        
+        if(bots[b].HP<=0){
+          this.XP+=bots[b].size/5;
+          this.progressXP+=bots[b].size/5;
+          this.size = this.getSize();
+          
+          this.HP += (this.maxHP/3); //for eating the ladybug
+          
+          bots[b].die();
         }
       }
     }
@@ -362,13 +394,9 @@ var Player = function(id, name, x, y, size){
               if(players[t].HP<=0){
                 this.XP += players[t].XP;
                 this.progressXP += players[t].XP;
-                this.size += (players[t].XP-XPtargets[0])/3.5;
-                var ratio = this.size/this.maxHP;
-                this.maxHP = this.size;
-                this.HP *= ratio; //scales HP with size
-                if((this.HP+0.01)>this.maxHP){
-                  this.HP = this.maxHP;
-                }
+                this.size = this.getSize();
+                
+                players[t].die();
               }
             }
             if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
@@ -377,13 +405,9 @@ var Player = function(id, name, x, y, size){
               if(this.HP<=0){
                 players[t].XP += this.XP;
                 players[t].progressXP += this.XP;
-                players[t].size += (players[t].XP-XPtargets[0])/3.5;
-                var ratio = players[t].size/players[t].maxHP;
-                players[t].maxHP = players[t].size;
-                players[t].HP *= ratio; //scales HP with size
-                if((this.HP+0.01)>this.maxHP){
-                  this.HP = this.maxHP;
-                }
+                players[t].size = players[t].getSize();
+                
+                this.die();
               }
             }
           }
@@ -392,7 +416,7 @@ var Player = function(id, name, x, y, size){
 		}
   }
   
-	this.handleXP = function(){
+	this.handlePlantXP = function(){
 		var headX;
 		var headY;
 		var range;
@@ -404,46 +428,32 @@ var Player = function(id, name, x, y, size){
     headY = this.y-this.size*0.44;
     range = this.size*0.075;
 
-    if(!(this.doingAbility && (this.whatAbility === "BoxRoll"||this.whatAbility === "DomeRoll"||this.whatAbility === "SpikeRoll"))){
-      for(let i in plants){
-        if(Math.sqrt(Math.pow(headX-plants[i].flower.x,2)+Math.pow(headY-plants[i].flower.y,2))< (range+plants[i].flower.size/2)){
-          if(plants[i].hasFlower){
-            plants[i].hasFlower = false;
-            this.progressXP+= plants[i].flower.XP;
-            this.XP+= plants[i].flower.XP;
-            this.size+= (plants[i].flower.XP)/3.5;
-            this.HP += (this.maxHP/20); //for eating the flower
-            if(this.HP>this.maxHP){
-              this.HP = this.maxHP;
-            }
-            var ratio = this.size/this.maxHP;
-            this.maxHP = this.size;
-            this.HP *= ratio; //scales HP with size
-            if((this.HP+0.01)>this.maxHP){
-              this.HP = this.maxHP;
-            }
+    for(let i in plants){
+      if(Math.sqrt(Math.pow(headX-plants[i].flower.x,2)+Math.pow(headY-plants[i].flower.y,2))< (range+plants[i].flower.size/2)){
+        if(plants[i].hasFlower){
+          plants[i].hasFlower = false;
+          this.XP+= plants[i].flower.XP;
+          this.progressXP+= plants[i].flower.XP;
+          this.size = this.getSize();
+
+          this.HP += (this.maxHP/10); //for eating the flower
+
+          sendPlantUpdate();
+        } 
+      }
+      for(let j in plants[i].leaves){
+        if(Math.sqrt(Math.pow(headX-plants[i].leaves[j].x,2)+Math.pow(headY-plants[i].leaves[j].y,2))< (range+plants[i].leaves[j].size/2)){
+          if(plants[i].hasLeaf[j]){
+            plants[i].hasLeaf[j] = false;
+            this.XP+= plants[i].leaves[j].XP;
+            this.progressXP+= plants[i].leaves[j].XP;
+            this.size = this.getSize();
+
             sendPlantUpdate();
           } 
         }
-        for(let j in plants[i].leaves){
-          if(Math.sqrt(Math.pow(headX-plants[i].leaves[j].x,2)+Math.pow(headY-plants[i].leaves[j].y,2))< (range+plants[i].leaves[j].size/2)){
-            if(plants[i].hasLeaf[j]){
-              plants[i].hasLeaf[j] = false;
-              this.progressXP+= plants[i].leaves[j].XP;
-              this.XP+= plants[i].leaves[j].XP;
-              this.size+= (plants[i].leaves[j].XP)/3.5;
-              var ratio = this.size/this.maxHP;
-              this.maxHP = this.size;
-              this.HP *= ratio; //scales HP with size
-              if((this.HP+0.01)>this.maxHP){
-                this.HP = this.maxHP;
-              }
-              sendPlantUpdate();
-            } 
-          }
-        }
       }
-	  }
+    }
 		
 		if(this.progressXP>this.targetXP){
 			this.doUpgrade(this.upgrade);
@@ -472,7 +482,7 @@ var Player = function(id, name, x, y, size){
           this.legDirX = -1;
           for(let t in players){
             if(players[t].id != this.id){
-              if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(this.size*0.75))){
+              if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(150))){
                 if(players[t].x>this.x){
                   players[t].bumpForce = this.size/10;
                 }
@@ -482,15 +492,21 @@ var Player = function(id, name, x, y, size){
               }
             }
           }
+          for(let b in bots){
+            if(Math.abs(bots[b].x-this.x)<((this.size/2+bots[b].size/2)+(150))){
+              if(bots[b].x>this.x){
+                bots[b].bumpForce = this.size/10;
+              }
+              if(bots[b].x<this.x){
+                bots[b].bumpForce = -(this.size/10);
+              }
+            }
+          }
         }
         break;
       case "JumpStomp":
-      	// for(let p in plants){ //testing
-      	// for(let l in plants[p].hasLeaf){
-      	// plants[p].hasLeaf[l] = true;
-      	// }
-      	// plants[p].hasFlower = true;
-      	// }
+        this.isJumping = true;
+      	this.jumpDelta = this.jumpForce;
         break;
       case "Shockwave":
       	if(this.abilityTimer === ShockwaveTime){
@@ -502,13 +518,23 @@ var Player = function(id, name, x, y, size){
           this.legDirX = -1;
           for(let t in players){
             if(players[t].id != this.id){
-              if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(this.size*1.25))){
+              if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(300))){
                 if(players[t].x>this.x){
                   players[t].bumpForce = this.size/8;
                 }
                 if(players[t].x<this.x){
                   players[t].bumpForce = -(this.size/8);
                 }
+              }
+            }
+          }
+          for(let b in bots){
+            if(Math.abs(bots[b].x-this.x)<((this.size/2+bots[b].size/2)+(300))){
+              if(bots[b].x>this.x){
+                bots[b].bumpForce = this.size/8;
+              }
+              if(bots[b].x<this.x){
+                bots[b].bumpForce = -(this.size/8);
               }
             }
           }
@@ -533,6 +559,38 @@ var Player = function(id, name, x, y, size){
 		}
 	}
   
+  this.handleJump = function(){
+    this.y -= this.jumpDelta;
+    this.jumpDelta -= this.gravity;
+    if(this.y>0){
+      this.y = 0;
+      this.jumpDela = this.jumpForce;
+      this.isJumping = false;
+      for(let t in players){
+        if(players[t].id != this.id){
+          if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(150))){
+            if(players[t].x>this.x){
+              players[t].bumpForce = this.size/10;
+            }
+            if(players[t].x<this.x){
+              players[t].bumpForce = -(this.size/10);
+            }
+          }
+        }
+      }
+      for(let b in bots){
+        if(Math.abs(bots[b].x-this.x)<((this.size/2+bots[b].size/2)+(150))){
+          if(bots[b].x>this.x){
+            bots[b].bumpForce = this.size/10;
+          }
+          if(bots[b].x<this.x){
+            bots[b].bumpForce = -(this.size/10);
+          }
+        }
+      }
+    }
+  }
+  
   this.die = function(){
     this.x = Math.random()*mapSize;
     this.progressXP = XPtargets[0];
@@ -547,6 +605,7 @@ var Player = function(id, name, x, y, size){
     this.abilitySet = [];
     this.maxHP = this.size;
     this.HP = this.maxHP;
+    this.shellType = "Box";
   }
   
 	this.animateLegs = function(){
@@ -569,15 +628,14 @@ var Player = function(id, name, x, y, size){
   }
 
 	this.update = function(){
-    if(this.HP>this.maxHP){
-      this.HP = this.maxHP;
-    }
+    
     var ratio = this.size/this.maxHP;
     this.maxHP = this.size;
     this.HP *= ratio; //scales HP with size
     if((this.HP+0.01)>this.maxHP){
       this.HP = this.maxHP;
     }
+    
     if(this.bumpForce != 0){ //main game physics
       this.bumpForce *= 0.9;
       if(Math.abs(this.bumpForce)<0.1){
@@ -587,21 +645,29 @@ var Player = function(id, name, x, y, size){
         this.x+=this.bumpForce;
       }
     }
+    
+    if(this.isJumping){
+      this.handleJump();
+    }
+    
 		if(this.distXToMouse<this.size*detectionRange){
 			this.doMovement = false;
 		} else{
 			this.doMovement = true;
 		}
-    this.handleXP();
-		if(this.doingAbility){
-			this.playAbility(this.whatAbility); //this can overwrite anything
-		}
-    this.animateLegs();
-    this.handleCollisions();
     
-    if(this.HP <= 0){
-      this.die();
+    if(this.doingAbility){
+			this.playAbility(this.whatAbility);
+		}
+    
+    if(!(this.isJumping || (this.doingAbility && (this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll")))){
+      this.handlePlantXP();
     }
+    if(!(this.isJumping)){
+      this.handleCollisions();
+    }
+    
+    this.animateLegs();
     
 		if(this.doMovement){
 			if (!(this.isFlipped)) {
@@ -670,13 +736,15 @@ var Bot = function(id, x, y, size){
   this.y = 0;
   this.size = size;
   this.bumpForce = 0;
+  this.maxHP = this.size;
+  this.HP = this.size;
   if((Math.random()*10)>5){
     this.isFlipped = false;
   } else{
     this.isFlipped = true;
   }
   this.frontLegUp = 1;
-  this.walkSpeed = 1.5;
+  this.walkSpeed = 1.15;
   this.legDirX = 1;
   this.legOffsetX = 0;
   this.legOffsetY = 0;
@@ -692,6 +760,13 @@ var Bot = function(id, x, y, size){
       this.legDirX = 1;
       this.frontLegUp = !this.frontLegUp;
     }
+  }
+
+  this.die = function(){
+    this.x = Math.random()*mapSize;
+    this.size = (Math.random()*50)+100;
+    this.maxHP = this.size;
+    this.HP = this.maxHP;
   }
 
   this.update = function() {
@@ -737,6 +812,8 @@ var Bot = function(id, x, y, size){
       frontLegUp: this.frontLegUp,
       legOffsetX: this.legOffsetX,
       legOffsetY: this.legOffsetY,
+      maxHP: this.maxHP,
+      HP: this.HP,
     }
   }
   return this;
