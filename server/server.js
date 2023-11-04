@@ -14,6 +14,7 @@ app.use(express.static(publicPath));
 var players = [];
 var plants = [];
 var bots = [];
+var cracks = [];
 
 //needs to be changed in BOTH server and client
 var mapSize = 6000;
@@ -28,7 +29,7 @@ server.listen(port, function(){//when the server starts, generate the map with t
 	}
   var bot = {};
   for(let i = 0; i<4; i++){
-    bot = new Bot(i, (Math.random()*mapSize), 0, ((Math.random()*120)+50));
+    bot = new Bot(i, (Math.random()*mapSize), 0, (Math.random()*200));
     bots.push(bot);
   }
 	console.log("Server Started on port "+ port +"!");
@@ -48,6 +49,7 @@ io.on('connection', function(socket) {
         socket.emit("initPack", {initPack: getAllPlayersInitPack()});
         socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
         socket.emit("botInitPack", {botInitPack: getAllBotsInitPack()});
+        socket.emit("crackInitPack", {crackInitPack: getAllCracksInitPack()});
     });
 
     socket.on("inputData", (data) => {
@@ -73,44 +75,65 @@ io.on('connection', function(socket) {
 
     socket.on("usedAbility", (data) =>{
     	player.whatAbility = player.abilitySet[data.whatAbility];
-			switch(player.whatAbility){
-			case "BoxRoll":
-				player.abilityTimer = BoxRollTime;
-				player.shellType = "Box";
-				break;
-			case "DomeRoll":
-				player.abilityTimer = DomeRollTime;
-				player.shellType = "Dome";
-				break;
-			case "SpikeRoll":
-				player.abilityTimer = SpikeRollTime;
-				player.shellType = "Spike";
-				break;
-			case "Hide":
-				player.abilityTimer = HideTime;
-				break;
-	    case "Stomp":
-				player.abilityTimer = StompTime;
-				break;
-			case "JumpStomp":
-				player.abilityTimer = JumpStompTime;
-				break;
-			case "Shockwave":
-				player.abilityTimer = ShockwaveTime;
-				break;
-      case "Dash":
-				player.abilityTimer = DashTime;
-				break;
-      case "Charge":
-				player.abilityTimer = ChargeTime;
-				break;
-			default:
-				console.log("Ability doesnt exist");
-				player.abilityTimer = 0;
-				break;
-			}
-			player.doingAbility = true;
-			player.bodyAngle = 0;
+      if(player.cooldownSet[data.whatAbility] === 0){
+        switch(player.whatAbility){
+        case "BoxRoll":
+          player.abilityTimer = BoxRollTime;
+          player.cooldownLength[data.whatAbility] = BoxRollCooldown;
+          player.cooldownSet[data.whatAbility] = BoxRollCooldown;
+          player.shellType = "Box";
+          break;
+        case "DomeRoll":
+          player.abilityTimer = DomeRollTime;
+          player.cooldownLength[data.whatAbility] = DomeRollCooldown;
+          player.cooldownSet[data.whatAbility] = DomeRollCooldown;
+          player.shellType = "Dome";
+          break;
+        case "SpikeRoll":
+          player.abilityTimer = SpikeRollTime;
+          player.cooldownLength[data.whatAbility] = SpikeRollCooldown;
+          player.cooldownSet[data.whatAbility] = SpikeRollCooldown;
+          player.shellType = "Spike";
+          break;
+        case "Hide":
+          player.abilityTimer = HideTime;
+          player.cooldownLength[data.whatAbility] = HideCooldown;
+          player.cooldownSet[data.whatAbility] = HideCooldown;
+          break;
+        case "Stomp":
+          player.abilityTimer = StompTime;
+          player.cooldownLength[data.whatAbility] = StompCooldown;
+          player.cooldownSet[data.whatAbility] = StompCooldown;
+          break;
+        case "JumpStomp":
+          player.abilityTimer = JumpStompTime;
+          player.cooldownLength[data.whatAbility] = JumpStompCooldown;
+          player.cooldownSet[data.whatAbility] = JumpStompCooldown;
+          break;
+        case "Shockwave":
+          player.abilityTimer = ShockwaveTime;
+          player.cooldownLength[data.whatAbility] = ShockwaveCooldown;
+          player.cooldownSet[data.whatAbility] = ShockwaveCooldown;
+          break;
+        case "Dash":
+          player.abilityTimer = DashTime;
+          player.cooldownLength[data.whatAbility] = DashCooldown;
+          player.cooldownSet[data.whatAbility] = DashCooldown;
+          break;
+        case "Charge":
+          player.abilityTimer = ChargeTime;
+          player.cooldownLength[data.whatAbility] = ChargeCooldown;
+          player.cooldownSet[data.whatAbility] = ChargeCooldown;
+          break;
+        default:
+          console.log("Ability doesnt exist");
+          player.abilityTimer = 0;
+          break;
+        }
+        player.doingAbility = true;
+        player.bodyAngle = 0;
+      }
+        
     })
 
     socket.on("choseCard", (data) =>{
@@ -118,9 +141,13 @@ io.on('connection', function(socket) {
     	if(player.upgrade!=3){
         if(player.upgrade!=4){
           player.abilitySet.push(player.abilityCards[data.abilityCard]);
+          player.cooldownLength.push(0);
+          player.cooldownSet.push(0);
         }
     	} else{ //upgrade existing ability instead
     		player.abilitySet[player.abilitySet.length-1] = player.abilityCards[data.abilityCard];
+        player.cooldownLength[player.abilitySet.length-1] = 0;
+        player.cooldownSet[player.abilitySet.length-1] = 0;
     	}
       player.abilityCards = []; //stops hacking by making indices worthless after used
       
@@ -178,10 +205,20 @@ var DomeRollTime = 40;
 var SpikeRollTime = 10;
 var HideTime = 120;
 var StompTime = 5;
-var JumpStompTime = 1; //only jumps once
+var JumpStompTime = 100000; //max ticks turtle can be in air for
 var ShockwaveTime = 10;
 var DashTime = 30;
 var ChargeTime = 20;
+
+var BoxRollCooldown = 200;
+var DomeRollCooldown = 200;
+var SpikeRollCooldown = 200;
+var HideCooldown = 200;
+var StompCooldown = 200;
+var JumpStompCooldown = 200;
+var ShockwaveCooldown = 200;
+var DashCooldown = 150;
+var ChargeCooldown = 200;
 
 var BoxRollAngle = (3.14159*1)/BoxRollTime;
 var DomeRollAngle = (3.14159*2)/DomeRollTime;
@@ -200,7 +237,9 @@ var Player = function(id, name, x, y, size){
 	this.doingAbility = false;
 	this.abilityTimer;
 	this.whatAbility;
-	this.abilitySet = ["JumpStomp"];
+	this.abilitySet = [];
+  this.cooldownLength = [];
+  this.cooldownSet = [];
 	this.bodyAngle = 0;
 
 	this.abilityCards = [];
@@ -209,8 +248,7 @@ var Player = function(id, name, x, y, size){
 	this.progressXP = XPtargets[0];
 	this.XP = this.progressXP;
   this.size = size;
-  
-  this.isJumping = false;
+
   this.jumpForce = 50;
   this.jumpDelta = this.jumpForce;
   this.gravity = 5;
@@ -236,9 +274,6 @@ var Player = function(id, name, x, y, size){
 	this.windowHeight;
 
 	this.getSpeed = function(){
-    if(this.isJumping){
-      return this.walkSpeed*6
-    }
 		if(this.doingAbility){
 			switch(this.whatAbility){
 			case "BoxRoll":
@@ -254,7 +289,7 @@ var Player = function(id, name, x, y, size){
 				return this.walkSpeed/2;
         break;
       case "JumpStomp":
-				return 0;
+				return this.walkSpeed*6;
         break;
       case "Shockwave":
 				return this.walkSpeed/2;
@@ -276,7 +311,7 @@ var Player = function(id, name, x, y, size){
 	}
   
   this.getSize = function(){
-    var modifier = 3000;
+    var modifier = 5000;
     var startingSize = 120;
     var maxSize = 1000;
     return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
@@ -330,18 +365,36 @@ var Player = function(id, name, x, y, size){
       if((hitLeftSide || hitRightSide) && ! waySmallerThanYou){
         bots[b].HP-= this.size/5;
         if(hitLeftSide){
+          if(this.size>bots[b].size){
+            if(bots[b].x > 0){
+              bots[b].x -= this.getSpeed();
+            }
+          } else{
+            if(this.x < mapSize){
+              this.x += (bots[b].walkSpeed+this.getSpeed());
+            }	
+          }
           this.bumpForce = 5
           bots[b].bumpForce = -5
-          bots[b].isFlipped = true;
+          bots[b].isFlipped = true
         }else if(hitRightSide){
+          if(this.size>bots[b].size){
+            if(bots[b].x<mapSize){
+              bots[b].x += this.getSpeed();
+            }
+          } else{
+            if(this.x > 0){
+              this.x -= (bots[b].walkSpeed+this.getSpeed());
+            }
+          }
           this.bumpForce = -5
           bots[b].bumpForce = 5
-          bots[b].isFlipped = false;
+          bots[b].isFlipped = false
         }
         
         if(bots[b].HP<=0){
-          this.XP+=bots[b].size/5;
-          this.progressXP+=bots[b].size/5;
+          this.XP+=bots[b].XP*0.75;
+          this.progressXP+=bots[b].XP*0.75;
           this.size = this.getSize();
           
           this.HP += (this.maxHP/3); //for eating the ladybug
@@ -351,7 +404,7 @@ var Player = function(id, name, x, y, size){
       }
     }
     for(let t in players){
-			if(players[t].id != this.id){
+			if(players[t].id != this.id && !(players[t].doingAbilty && (players[t].whatAbility === "JumpStomp"))){
 				var hitLeftSide = players[t].x+players[t].size/2>this.x-this.size/2 && players[t].x-players[t].size/2<this.x-this.size/2
 				var hitRightSide = this.x+this.size/2>players[t].x-players[t].size/2 && this.x+this.size/2<players[t].x+players[t].size/2 
 				var wayBiggerThanYou = (players[t].size/this.size)>5
@@ -362,9 +415,7 @@ var Player = function(id, name, x, y, size){
           if(hitLeftSide){
             if(this.size>players[t].size){
               if(players[t].x > 0){
-                if(this.getSpeed() != 0){
-                  players[t].x -= this.getSpeed();
-                }
+                players[t].x -= this.getSpeed();
               }
             } else{
               if(this.x < mapSize){
@@ -392,8 +443,8 @@ var Player = function(id, name, x, y, size){
               (!this.isFlipped && players[t].isFlipped && hitRightSide) || (!this.isFlipped && !players[t].isFlipped && hitRightSide)){
               players[t].HP-= this.size/5;
               if(players[t].HP<=0){
-                this.XP += players[t].XP;
-                this.progressXP += players[t].XP;
+                this.XP += players[t].XP*0.75;
+                this.progressXP += players[t].XP*0.75;
                 this.size = this.getSize();
                 
                 players[t].die();
@@ -403,8 +454,8 @@ var Player = function(id, name, x, y, size){
               (players[t].isFlipped && !this.isFlipped && hitRightSide) || (players[t].isFlipped && this.isFlipped && hitRightSide)){
               this.HP-= players[t].size/5;
               if(this.HP<=0){
-                players[t].XP += this.XP;
-                players[t].progressXP += this.XP;
+                players[t].XP += this.XP*0.75;
+                players[t].progressXP += this.XP*0.75;
                 players[t].size = players[t].getSize();
                 
                 this.die();
@@ -502,11 +553,44 @@ var Player = function(id, name, x, y, size){
               }
             }
           }
+          // var crack = new Crack(this.x, 0, 600, this.isFlipped);
+          // cracks.push(crack);
+          // socket.emit("crackInitPack", {crackInitPack: crack.getInitPack()});
         }
         break;
       case "JumpStomp":
-        this.isJumping = true;
-      	this.jumpDelta = this.jumpForce;
+        this.y -= this.jumpDelta;
+        this.jumpDelta -= this.gravity;
+        if(this.y>0){
+          this.y = 0;
+          this.jumpDelta = this.jumpForce;
+          this.abilityTimer = 0;
+          for(let t in players){
+            if(players[t].id != this.id){
+              if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(150))){
+                if(players[t].x>this.x){
+                  players[t].bumpForce = this.size/10;
+                }
+                if(players[t].x<this.x){
+                  players[t].bumpForce = -(this.size/10);
+                }
+              }
+            }
+          }
+          for(let b in bots){
+            if(Math.abs(bots[b].x-this.x)<((this.size/2+bots[b].size/2)+(150))){
+              if(bots[b].x>this.x){
+                bots[b].bumpForce = this.size/10;
+              }
+              if(bots[b].x<this.x){
+                bots[b].bumpForce = -(this.size/10);
+              }
+            }
+          }
+          // var crack = new Crack(this.x, 0, 600, this.isFlipped);
+          // cracks.push(crack);
+          // socket.emit("crackInitPack", {crackInitPack: crack.getInitPack()});
+        }
         break;
       case "Shockwave":
       	if(this.abilityTimer === ShockwaveTime){
@@ -538,6 +622,9 @@ var Player = function(id, name, x, y, size){
               }
             }
           }
+          // var crack = new Crack(this.x, 0, 600, this.isFlipped);
+          // cracks.push(crack);
+          // socket.emit("crackInitPack", {crackInitPack: crack.getInitPack()});
         }
       	break;
       case "Dash":
@@ -554,50 +641,18 @@ var Player = function(id, name, x, y, size){
       }
       this.abilityTimer -= 1;
     }
-		if(this.abilityTimer === 0){
+		if(this.abilityTimer <= 0){
 			this.doingAbility = false;
 		}
 	}
   
-  this.handleJump = function(){
-    this.y -= this.jumpDelta;
-    this.jumpDelta -= this.gravity;
-    if(this.y>0){
-      this.y = 0;
-      this.jumpDela = this.jumpForce;
-      this.isJumping = false;
-      for(let t in players){
-        if(players[t].id != this.id){
-          if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(150))){
-            if(players[t].x>this.x){
-              players[t].bumpForce = this.size/10;
-            }
-            if(players[t].x<this.x){
-              players[t].bumpForce = -(this.size/10);
-            }
-          }
-        }
-      }
-      for(let b in bots){
-        if(Math.abs(bots[b].x-this.x)<((this.size/2+bots[b].size/2)+(150))){
-          if(bots[b].x>this.x){
-            bots[b].bumpForce = this.size/10;
-          }
-          if(bots[b].x<this.x){
-            bots[b].bumpForce = -(this.size/10);
-          }
-        }
-      }
-    }
-  }
   
   this.die = function(){
     this.x = Math.random()*mapSize;
-    this.progressXP = XPtargets[0];
-    this.XP = this.progressXP;
+    this.XP *= 0.25;
     this.upgrade = 1; //player on first upgrade
     this.targetXP = 20;
-    this.size = 120;
+    this.size = this.getSize();
     this.walkSpeed = 1.5;
     this.bumpForce = 0;
     this.abilityCardsActive = false;
@@ -629,6 +684,12 @@ var Player = function(id, name, x, y, size){
 
 	this.update = function(){
     
+    for(let i in this.cooldownSet){
+      if(this.cooldownSet[i] != 0 && !(this.doingAbility)){
+        this.cooldownSet[i] -= 1;
+      }
+    }
+    
     var ratio = this.size/this.maxHP;
     this.maxHP = this.size;
     this.HP *= ratio; //scales HP with size
@@ -646,9 +707,6 @@ var Player = function(id, name, x, y, size){
       }
     }
     
-    if(this.isJumping){
-      this.handleJump();
-    }
     
 		if(this.distXToMouse<this.size*detectionRange){
 			this.doMovement = false;
@@ -660,10 +718,10 @@ var Player = function(id, name, x, y, size){
 			this.playAbility(this.whatAbility);
 		}
     
-    if(!(this.isJumping || (this.doingAbility && (this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll")))){
+    if(!(this.doingAbility && (this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll"  || this.whatAbility === "JumpStomp"))){
       this.handlePlantXP();
     }
-    if(!(this.isJumping)){
+    if(!(this.doingAbility && (this.whatAbility === "JumpStomp"))){
       this.handleCollisions();
     }
     
@@ -693,31 +751,33 @@ var Player = function(id, name, x, y, size){
 	}
 
 	this.getUpdatePack = function () {
-        return {
-            id: this.id,
-            x: this.x,
-            y: this.y,
-            progressXP: this.progressXP,
-            XP: this.XP,
-            HP: this.HP,
-            maxHP: this.maxHP,
-            upgrade: this.upgrade,
-            targetXP: this.targetXP,
-            size: this.size,
-            doMovement: this.doMovement,
-            legOffsetX: this.legOffsetX,
-            frontLegUp: this.frontLegUp,
-            isFlipped: this.isFlipped,
-            shellType: this.shellType,
-            headAngle: this.headAngle,
-            bodyAngle : this.bodyAngle,
-            doingAbility: this.doingAbility,
-            whatAbility: this.whatAbility,
-            abilitySet: this.abilitySet,
-            abilityCardsActive: this.abilityCardsActive,
-            abilityCards: this.abilityCards,
-        }
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      progressXP: this.progressXP,
+      XP: this.XP,
+      HP: this.HP,
+      maxHP: this.maxHP,
+      upgrade: this.upgrade,
+      targetXP: this.targetXP,
+      size: this.size,
+      doMovement: this.doMovement,
+      legOffsetX: this.legOffsetX,
+      frontLegUp: this.frontLegUp,
+      isFlipped: this.isFlipped,
+      shellType: this.shellType,
+      headAngle: this.headAngle,
+      bodyAngle : this.bodyAngle,
+      doingAbility: this.doingAbility,
+      whatAbility: this.whatAbility,
+      abilitySet: this.abilitySet,
+      abilityCardsActive: this.abilityCardsActive,
+      abilityCards: this.abilityCards,
+      cooldownLength: this.cooldownLength,
+      cooldownSet: this.cooldownSet,
     }
+  }
     
 	return this;
 }
@@ -730,11 +790,20 @@ function getAllPlayersInitPack() {
     return initPack;
 }
 
-var Bot = function(id, x, y, size){
+var Bot = function(id, x, y, XP){
+  
+  this.getSize = function(){
+    var modifier = 5000;
+    var startingSize = 120;
+    var maxSize = 1000;
+    return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
+  }
+  
   this.id = id;
   this.x = x;
   this.y = 0;
-  this.size = size;
+  this.XP = XP
+  this.size = this.getSize();
   this.bumpForce = 0;
   this.maxHP = this.size;
   this.HP = this.size;
@@ -764,7 +833,8 @@ var Bot = function(id, x, y, size){
 
   this.die = function(){
     this.x = Math.random()*mapSize;
-    this.size = (Math.random()*50)+100;
+    this.XP = Math.random()*200;
+    this.size = this.getSize();
     this.maxHP = this.size;
     this.HP = this.maxHP;
   }
@@ -889,6 +959,36 @@ var Leaf = function(x, y, isFlipped){
 	return this;
 }
 
+var Crack = function(x, y, size, isFlipped){
+  this.x = x;
+	this.y = y;
+  this.size = size;
+	this.isFlipped = isFlipped;
+  
+  this.update = function(){
+    ;
+  }
+  
+  this.getInitPack = function () { //base information that can be updated
+		return {
+			x: this.x,
+			y: this.y,
+			size: this.size,
+			isFlipped: this.isFlipped,
+		}
+	}
+  
+  return this;
+}
+
+function getAllCracksInitPack() {
+    var crackInitPack = [];
+    for(let i in cracks) {
+        crackInitPack.push(cracks[i].getInitPack());
+    }
+    return crackInitPack;
+}
+
 function getAllPlantsInitPack() {
     var plantInitPack = [];
     for(let i in plants) {
@@ -932,16 +1032,16 @@ setInterval(() => {
 
 setInterval(() => {
   for(let i in plants) {
-    if(Math.floor(Math.random()*5)===0){
+    if(Math.floor(Math.random()*3)===0){
       for(let j in plants[i].hasLeaf){
         if(plants[i].hasLeaf[j] === false){
-          if(Math.floor(Math.random()*3)===0){
+          if(Math.floor(Math.random()*5)===0){
             plants[i].hasLeaf[j] = true;
           }
         }
       }
       if(plants[i].hasFlower === false){
-        if(Math.floor(Math.random()*5)===0){
+        if(Math.floor(Math.random()*7)===0){
           plants[i].hasFlower = true;
         }
       }
