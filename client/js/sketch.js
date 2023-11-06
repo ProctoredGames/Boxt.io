@@ -195,9 +195,9 @@ background(0, 0, 250); // it gets a hex/rgb color
     if(players[i].id === myId) {
       var adjustedX;
       if(players[i].isFlipped){
-        adjustedX = ((width/2+players[i].size/2) - players[i].x);
+        adjustedX = ((width/2+players[i].size*0.60) - players[i].x);
       } else{
-        adjustedX = ((width/2-players[i].size/2) - players[i].x);
+        adjustedX = ((width/2-players[i].size*0.60) - players[i].x);
       }
     var adjustedY = ((height*0.75+players[i].size/3.5) - players[i].y);
       translate(adjustedX, adjustedY); //zooming in to 1/3 up the player
@@ -342,7 +342,7 @@ var Player = function(id, name, x, y, size){
 		fill(0, 0, 0);
 		textSize(26);
 		textAlign(CENTER);
-		text(this.name, 0, -this.size*1.2);
+		text(this.name, 0, -this.size*1.1-this.size * 0.10);
 		pop();
 	 }
 
@@ -354,9 +354,9 @@ var Player = function(id, name, x, y, size){
 		push();
 		translate(this.x, this.y);
 		fill(0, 100, 0);
-		rect(-this.size/2, -this.size*1.2-this.size * 0.22, this.size, this.size * 0.22, 10)
+		rect(-this.size/2, -this.size*1.1-this.size * 0.30, this.size, this.size * 0.20, 10)
 		fill(0, 250, 0);
-		rect(-this.size/2, -this.size*1.2-this.size * 0.22, this.size*percentage, this.size * 0.22, 10);
+		rect(-this.size/2, -this.size*1.1-this.size * 0.30, this.size*percentage, this.size * 0.20, 10);
 		pop();
 	}
 

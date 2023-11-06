@@ -16,6 +16,8 @@ var plants = [];
 var bots = [];
 var cracks = [];
 
+var maxAbilityCards = 4; //probably will want to change this
+
 //needs to be changed in BOTH server and client
 var mapSize = 6000;
 
@@ -40,7 +42,7 @@ io.on('connection', function(socket) {
     var player = {};
     
     socket.on("imReady", (data) => { //player joins
-        player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 120);
+        player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 5);
         players.push(player);
 
         socket.emit("yourId", {id: player.id});
@@ -74,9 +76,8 @@ io.on('connection', function(socket) {
     // })
 
     socket.on("usedAbility", (data) =>{
-    	player.whatAbility = player.abilitySet[data.whatAbility];
-      if(player.cooldownSet[data.whatAbility] === 0){
-        switch(player.whatAbility){
+      if(player.cooldownSet[data.whatAbility] === 0 && !(player.doingAbility && player.whatAbility === "JumpStomp")){ //you cannot interupt JumpStomp
+        switch(player.abilitySet[data.whatAbility]){
         case "BoxRoll":
           player.abilityTimer = BoxRollTime;
           player.cooldownLength[data.whatAbility] = BoxRollCooldown;
@@ -130,6 +131,7 @@ io.on('connection', function(socket) {
           player.abilityTimer = 0;
           break;
         }
+        player.whatAbility = player.abilitySet[data.whatAbility];
         player.doingAbility = true;
         player.bodyAngle = 0;
       }
@@ -198,7 +200,7 @@ io.on('connection', function(socket) {
 var upperLegBound = 0.025;
 var lowerLegBound = -0.075;
 
-var detectionRange = 0.4; //mouse moves player when it is greater than 60% of the player size
+var detectionRange = 0.25
 
 var BoxRollTime = 40;
 var DomeRollTime = 40;
@@ -210,15 +212,15 @@ var ShockwaveTime = 10;
 var DashTime = 30;
 var ChargeTime = 20;
 
-var BoxRollCooldown = 200;
-var DomeRollCooldown = 200;
-var SpikeRollCooldown = 200;
-var HideCooldown = 200;
-var StompCooldown = 200;
-var JumpStompCooldown = 200;
-var ShockwaveCooldown = 200;
-var DashCooldown = 150;
-var ChargeCooldown = 200;
+var BoxRollCooldown = 250;
+var DomeRollCooldown = 310;
+var SpikeRollCooldown = 280;
+var HideCooldown = 250;
+var StompCooldown = 250;
+var JumpStompCooldown = 300;
+var ShockwaveCooldown = 280;
+var DashCooldown = 250;
+var ChargeCooldown = 300;
 
 var BoxRollAngle = (3.14159*1)/BoxRollTime;
 var DomeRollAngle = (3.14159*2)/DomeRollTime;
@@ -226,7 +228,15 @@ var SpikeRollAngle = (3.14159/2)/SpikeRollTime;
 
 var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
-var Player = function(id, name, x, y, size){
+var Player = function(id, name, x, y, XP){
+  
+  this.getSize = function(){
+    var modifier = 3000;
+    var startingSize = 120;
+    var maxSize = 1000;
+    return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
+  }
+  
 	this.id = id;
 	this.name = name;
 	this.x = x;
@@ -238,16 +248,16 @@ var Player = function(id, name, x, y, size){
 	this.abilityTimer;
 	this.whatAbility;
 	this.abilitySet = [];
-  this.cooldownLength = [];
-  this.cooldownSet = [];
+  this.cooldownLength = []; //total cooldown
+  this.cooldownSet = []; //cooldown left
 	this.bodyAngle = 0;
 
 	this.abilityCards = [];
 	this.abilityCardsActive = false;
 
-	this.progressXP = XPtargets[0];
-	this.XP = this.progressXP;
-  this.size = size;
+  this.XP = XP;
+	this.progressXP = this.XP;
+  this.size = this.getSize();
 
   this.jumpForce = 50;
   this.jumpDelta = this.jumpForce;
@@ -289,7 +299,7 @@ var Player = function(id, name, x, y, size){
 				return this.walkSpeed/2;
         break;
       case "JumpStomp":
-				return this.walkSpeed*6;
+				return this.walkSpeed*20;
         break;
       case "Shockwave":
 				return this.walkSpeed/2;
@@ -309,14 +319,6 @@ var Player = function(id, name, x, y, size){
 			return this.walkSpeed
 		}
 	}
-  
-  this.getSize = function(){
-    var modifier = 5000;
-    var startingSize = 120;
-    var maxSize = 1000;
-    return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
-    
-  }
 
 	this.doUpgrade = function(upgrade){
 		if(!(this.abilityCardsActive)){
@@ -361,8 +363,10 @@ var Player = function(id, name, x, y, size){
     for (let b in bots){
       var hitLeftSide = bots[b].x+bots[b].size/2>this.x-this.size/2 && bots[b].x-bots[b].size/2<this.x-this.size/2
       var hitRightSide = this.x+this.size/2>bots[b].x-bots[b].size/2 && this.x+this.size/2<bots[b].x+bots[b].size/2 
-      var waySmallerThanYou = (this.size/bots[b].size)>4.5
-      if((hitLeftSide || hitRightSide) && ! waySmallerThanYou){
+      var hitTopSide = bots[b].y>this.y-this.size && bots[b].y-bots[b].size<this.y-this.size
+      var hitBottomSide = this.y>bots[b].y-bots[b].size && this.y-this.size<bots[b].y-bots[b].size
+
+      if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
         bots[b].HP-= this.size/5;
         if(hitLeftSide){
           if(this.size>bots[b].size){
@@ -404,14 +408,13 @@ var Player = function(id, name, x, y, size){
       }
     }
     for(let t in players){
-			if(players[t].id != this.id && !(players[t].doingAbilty && (players[t].whatAbility === "JumpStomp"))){
+			if(players[t].id != this.id){
 				var hitLeftSide = players[t].x+players[t].size/2>this.x-this.size/2 && players[t].x-players[t].size/2<this.x-this.size/2
 				var hitRightSide = this.x+this.size/2>players[t].x-players[t].size/2 && this.x+this.size/2<players[t].x+players[t].size/2 
-				var wayBiggerThanYou = (players[t].size/this.size)>5
-				var waySmallerThanYou = (this.size/players[t].size)>5
-
-        //PLAYERS[t] hit left or PLAYERS[t] hit right
-				if((hitLeftSide || hitRightSide) && !(wayBiggerThanYou || waySmallerThanYou)){
+				var hitTopSide = players[t].y>this.y-this.size && players[t].y-players[t].size<this.y-this.size
+        var hitBottomSide = this.y>players[t].y-players[t].size && this.y-this.size<players[t].y-players[t].size
+      
+        if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
           if(hitLeftSide){
             if(this.size>players[t].size){
               if(players[t].x > 0){
@@ -504,10 +507,6 @@ var Player = function(id, name, x, y, size){
           } 
         }
       }
-    }
-		
-		if(this.progressXP>this.targetXP){
-			this.doUpgrade(this.upgrade);
     }
 	}
 
@@ -721,7 +720,7 @@ var Player = function(id, name, x, y, size){
     if(!(this.doingAbility && (this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll"  || this.whatAbility === "JumpStomp"))){
       this.handlePlantXP();
     }
-    if(!(this.doingAbility && (this.whatAbility === "JumpStomp"))){
+    if(1){
       this.handleCollisions();
     }
     
@@ -738,6 +737,15 @@ var Player = function(id, name, x, y, size){
 				}
 			}
 		}
+    if(this.progressXP>this.targetXP){
+      if(this.abilitySet.length===maxAbilityCards){
+        if(this.upgrade === 3){ //you are not adding a card on upgrade 3, you are upgrading one. so allowed
+          this.doUpgrade(this.upgrade);
+        }
+      } else{
+        this.doUpgrade(this.upgrade);
+      }
+    }
 	}
 
 	this.getInitPack = function () { //base information that can be updated
@@ -793,7 +801,7 @@ function getAllPlayersInitPack() {
 var Bot = function(id, x, y, XP){
   
   this.getSize = function(){
-    var modifier = 5000;
+    var modifier = 3000;
     var startingSize = 120;
     var maxSize = 1000;
     return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
@@ -1027,7 +1035,6 @@ setInterval(() => {
     io.emit("updatePack", {updatePack});
 
     io.emit("botUpdatePack", {botUpdatePack});
-  
 }, 35)
 
 setInterval(() => {
