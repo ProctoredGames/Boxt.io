@@ -65,7 +65,7 @@ function setup() {
     spectateX = Math.random()*mapSize;
     spectateY = 0;
     spectateDir = 1;
-    spectateSpeed = 1;
+    spectateSpeed = 0.5;
 
     socket = io();
 
