@@ -16,6 +16,8 @@ var turtle, turtleHead, turtleJaw, turtleFoot, turtleTail;
 var stem, leaf, flowerWhite, flowerYellow;
 var HideUI, BoxRollUI, DomeRollUI, SpikeRollUI;
 
+var crackImg;
+
 //needs to be changed in BOTH server and client
 var mapSize = 6000;
 
@@ -41,6 +43,9 @@ function preload(){
 
 	ladybug = loadImage('assets/ladybug.png');
 	ladybugFoot = loadImage('assets/ladybugFoot.png');
+  
+  	crackImg = loadImage('assets/cracks.png');
+  	title = loadImage('assets/title.png');
 }
 
 var botNames = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
@@ -53,12 +58,20 @@ function setup() {
     plants = [];
 
     bots = [];
+  
+    cracks = [];
+
+    isSpectating = true;
+    spectateX = Math.random()*mapSize;
+    spectateY = 0;
+    spectateDir = 1;
+    spectateSpeed = 1;
 
     socket = io();
 
-    var playerName = botNames[Math.floor(Math.random()*(botNames.length))];
-    
-    socket.emit("imReady", {name: playerName});
+    playerName = "boxt.io";
+
+    socket.emit("loadedPage", {name: null});
 
     socket.on("yourId", function(data) {
         myId = data.id;
@@ -104,6 +117,8 @@ function setup() {
                     players[j].abilitySet = data.updatePack[i].abilitySet;
                     players[j].abilityCardsActive = data.updatePack[i].abilityCardsActive;
                     players[j].abilityCards = data.updatePack[i].abilityCards;
+                    players[j].cooldownLength = data.updatePack[i].cooldownLength;
+                    players[j].cooldownSet = data.updatePack[i].cooldownSet;
                 }
             }
         }
@@ -122,6 +137,14 @@ function setup() {
     		var bot = new Bot(data.botInitPack[i].id, data.botInitPack[i].x, data.botInitPack[i].y, data.botInitPack[i].size);
     		bots.push(bot);
     		console.log("New Bot");
+    	}
+    });
+    
+    socket.on("crackInitPack", function(data) {
+    	for(let i in data.crackInitPack) {
+    		var crack = new Crack(data.crackInitPack[i].x, data.crackInitPack[i].y, data.crackInitPack[i].size, data.crackInitPack[i].isFlipped);
+    		cracks.push(crack);
+    		console.log("New Crack");
     	}
     });
 
@@ -168,25 +191,47 @@ function setup() {
 	imageMode(CENTER);
 	rectMode(CORNER);
 	textAlign(CORNER, CORNER);
+	nameInp = createInput("");
+  	centerNameInput();
+  	nameInp.input(setName);
+	button = createButton('PLAY');
+	centerButton();
+  	button.mousePressed(startGame);
 }
 
 //called every frame
 function draw(){
-background(0, 0, 250); // it gets a hex/rgb color
-  sendInputData();
-  push();
-  for(let i in players) {
-    if(players[i].id === myId) {
-      var adjustedX;
-      if(players[i].isFlipped){
-        adjustedX = ((width/2+players[i].size/2) - players[i].x);
-      } else{
-        adjustedX = ((width/2-players[i].size/2) - players[i].x);
-      }
-    var adjustedY = ((height*0.75+players[i].size/3.5) - players[i].y);
-      translate(adjustedX, adjustedY); //zooming in to 1/3 up the player
-    }
-  }
+	background(0, 0, 250); // it gets a hex/rgb color
+  	sendInputData();
+  	push();
+  	if(!(isSpectating)){
+  		for(let i in players) {
+	    	if(players[i].id === myId) {
+		      	var adjustedX;
+		      	if(players[i].isFlipped){
+		        	adjustedX = ((width/2+players[i].size*0.60) - players[i].x);
+		      	} else{
+		        	adjustedX = ((width/2-players[i].size*0.60) - players[i].x);
+		      	}
+		    	var adjustedY = ((height*0.75+players[i].size/3.5) - players[i].y);
+		      	translate(adjustedX, adjustedY); //zooming in to 1/3 up the player
+	    	}
+	  	}
+	} else{
+		adjustedX = ((width/2)-spectateX)
+		adjustedY = ((height*0.75+150/3.5)-spectateY)
+		spectateX += spectateSpeed*spectateDir
+		if(spectateX>mapSize){
+			spectateX = mapSize
+			spectateDir = -1
+		}
+		if(spectateX<0){
+			spectateX = 0
+			spectateDir = 1
+		}
+		translate(adjustedX, adjustedY);
+	}
+	  
 
   fill(0, 0, 200);
   rect(0, 0-adjustedY, mapSize, windowHeight);
@@ -206,6 +251,10 @@ background(0, 0, 250); // it gets a hex/rgb color
     if(plants[i].hasFlower){
       plants[i].flower.draw();
     }
+  }
+  
+  for(let i in cracks) {
+  	cracks[i].draw();
   }
 
   for(let i in bots) {
@@ -230,33 +279,78 @@ background(0, 0, 250); // it gets a hex/rgb color
         players[i].drawUI();
       }
   }
-  fill('rgba(0,0,0, 0.8)');
-  rect(windowHeight*0.02, windowHeight*0.02, windowHeight*0.25, windowHeight*0.3, 20);
-  fill(0, 200, 0);
-  textSize(17);
-  textAlign(CENTER);
-  text("LEADERBOARD", windowHeight*0.02, (windowHeight*0.045), windowHeight*0.25, windowHeight*0.03)
-  textSize(15);
-  textAlign(LEFT);
+  if(!isSpectating){
+  	fill(0,0,0,200);
+	  rect(windowHeight*0.02, windowHeight*0.02, windowHeight*0.25, windowHeight*0.3, 20);
+	  fill(0, 200, 0);
+	  textSize(17);
+	  textAlign(CENTER);
+	  text("LEADERBOARD", windowHeight*0.02, (windowHeight*0.045), windowHeight*0.25, windowHeight*0.03)
+	  textSize(15);
+	  textAlign(LEFT);
 
-  var rankedPlayers = players;
+	  var rankedPlayers = players;
 
-  var count = 1;
-  for(let i in rankedPlayers){
-    if(rankedPlayers[i].id === myId){
-        fill(255, 255, 0);
-      }
-      text(count + " | " + players[i].name + " : " + Math.round(players[i].XP), windowHeight*0.05, (windowHeight*0.08)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
-      if(players[i].id === myId){
-        fill(0, 200, 0);
-      }
-    count ++;
+	  var count = 1;
+	  for(let i in rankedPlayers){
+	    if(rankedPlayers[i].id === myId){
+	        fill(255, 255, 0);
+	      }
+	      text(count + " | " + players[i].name + " : " + Math.round(players[i].XP), windowHeight*0.05, (windowHeight*0.08)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
+	      if(players[i].id === myId){
+	        fill(0, 200, 0);
+	      }
+	    count ++;
+	  }
+  } else{
+  	image(title, windowWidth/2, windowHeight/2-(windowHeight*0.2), windowHeight/5 * (1300/300), windowHeight/5);
   }
 }
 
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
+function setName(){
+	playerName = this.value()
 }
+
+function startGame(){
+	removeElements();
+	isSpectating = false
+	players = []
+	plants = []
+	bots = []
+	cracks = []
+	socket.emit("imReady", {name: playerName});
+	// chatInp = createInput("");
+  	// centerInput();
+  	// chatInp.input(setName);
+}
+
+function windowResized() {
+  	resizeCanvas(windowWidth, windowHeight);
+  	if(isSpectating){
+  		centerNameInput()
+  		centerButton()
+  	} else{
+  		centerChatInput()
+  	}
+}
+
+function centerNameInput() {
+	let titleWidth = windowHeight/5 * (1300/300)
+ 	nameInp.position(windowWidth/2-(titleWidth/2)/2, windowHeight/2 - (windowHeight*0.08));
+ 	nameInp.size(titleWidth/2, windowHeight/15)
+}
+
+function centerButton() {
+	let titleWidth = windowHeight/5 * (1300/300)
+	button.position(windowWidth/2-(titleWidth/4)/2, windowHeight/2);
+	button.size(titleWidth/4, windowHeight/14);
+}
+
+// function centerChatInput() {
+// 	let titleWidth = windowHeight/5 * (1300/300)
+//  	chatInp.position(windowWidth/2-(titleWidth/2)/2, windowHeight*0.8 - (windowHeight*0.08));
+//  	chatInp.size(titleWidth/2, windowHeight/15)
+// }
 
 var Player = function(id, name, x, y, size){
 	this.id = id;
@@ -274,6 +368,8 @@ var Player = function(id, name, x, y, size){
 
 	this.doingAbility = false;
 	this.abilitySet = [];
+  	this.cooldownLength = [];
+  	this.cooldownSet = [];
 	this.whatAbility;
 	this.bodyAngle = 0;
 
@@ -320,10 +416,10 @@ var Player = function(id, name, x, y, size){
 		fill(0, 0, 0);
 		textSize(26);
 		textAlign(CENTER);
-		text(this.name, 0, -this.size*1.22);
+		text(this.name, 0, -this.size*1.1-this.size * 0.10);
 		pop();
 	 }
-	  
+
 	this.drawStatus = function(){
 		var percentage = this.HP/this.maxHP
 		if(this.HP>this.maxHP){
@@ -332,9 +428,9 @@ var Player = function(id, name, x, y, size){
 		push();
 		translate(this.x, this.y);
 		fill(0, 100, 0);
-		rect(-this.size/2, -this.size*1.22-27, this.size, windowWidth*0.025, 10)
+		rect(-this.size/2, -this.size*1.1-this.size * 0.30, this.size, this.size * 0.20, 10)
 		fill(0, 250, 0);
-		rect(-this.size/2, -this.size*1.22-27, this.size*percentage, windowWidth*0.025, 10);
+		rect(-this.size/2, -this.size*1.1-this.size * 0.30, this.size*percentage, this.size * 0.20, 10);
 		pop();
 	}
 
@@ -368,7 +464,13 @@ var Player = function(id, name, x, y, size){
 	      	textSize(windowWidth/(15*6));
 	      	textAlign(CENTER);
 	      	text(this.abilitySet[i], windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15+windowWidth/(15*2), 
-	         windowHeight*0.85 + windowWidth/40);
+	        windowHeight*0.85 + windowWidth/40);
+        
+          if(this.cooldownSet[i] != 0){
+            fill(0, 0, 0, 100);
+            rect(windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15,
+            windowHeight*0.85-windowWidth/30,(windowWidth/15)*(this.cooldownSet[i]/this.cooldownLength[i]),windowWidth/15, 10);
+          }
 
 	      	c++;
     	}
@@ -495,9 +597,9 @@ var Bot = function(id, x, y, size){
 		push();
 		translate(this.x, this.y);
 		fill(0, 100, 0);
-		rect(-this.size/2, -this.size*1.22-27, this.size, windowWidth*0.025, 10)
+		rect(-this.size/2, -this.size*1-this.size * 0.22, this.size, this.size * 0.22, 10)
 		fill(0, 250, 0);
-		rect(-this.size/2, -this.size*1.22-27, this.size*percentage, windowWidth*0.025, 10);
+		rect(-this.size/2, -this.size*1-this.size * 0.22, this.size*percentage, this.size * 0.22, 10);
 		pop();
 	}
 	this.draw = function(){
@@ -590,6 +692,26 @@ var Leaf = function(x, y, isFlipped){
 	return this;
 }
 
+var Crack = function(x, y, size, isFlipped){
+  this.x = x;
+	this.y = y;
+  this.size = size;
+	this.isFlipped = isFlipped;
+  
+  this.draw = function(){
+    push();
+    translate(this.x, this.y);
+    if(!(this.isFlipped)){
+      scale(1, 1);
+      image(crackImg, 0, 0, this.size, this.size*0.5);
+    }else{
+      scale(-1, 1);
+      image(crackImg, 0, 0, this.size, this.size*0.5);
+    }
+    pop();
+  }
+  return this;
+}
 
 
 function keyPressed() {
@@ -671,24 +793,26 @@ function mouseClicked() {
   	var abilityCards;
   	var abilityCardsActive;
   	var abilitySet;
-  	for(let i in players) {
-    	if(players[i].id === myId) {
-      		abilityCards = players[i].abilityCards;
-      		abilitySet = players[i].abilitySet;
-      		abilityCardsActive = players[i].abilityCardsActive;
+  	if(!isSpectating){
+  		for(let i in players) {
+	    	if(players[i].id === myId) {
+	      		abilityCards = players[i].abilityCards;
+	      		abilitySet = players[i].abilitySet;
+	      		abilityCardsActive = players[i].abilityCardsActive;
+			}
 		}
-	}
-	var abilityCard;
-	var totalMenuWidth = ((abilityCards.length)*(windowHeight/7)) + ((abilityCards.length-1)*(windowHeight/55));
-  
-	if(abilityCardsActive){
-    	for(let i in abilityCards){
-     		if(((windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55))<mouseX && mouseX<(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/7) && (windowHeight*0.4-windowHeight/14)<mouseY && mouseY<(windowHeight*0.4-windowHeight/14 + windowHeight/7))){
-        		abilityCard = i;
-        		socket.emit("choseCard", {abilityCard});
-        		break;
-      		}
-    	}
+		var abilityCard;
+		var totalMenuWidth = ((abilityCards.length)*(windowHeight/7)) + ((abilityCards.length-1)*(windowHeight/55));
+	  
+		if(abilityCardsActive){
+	    	for(let i in abilityCards){
+	     		if(((windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55))<mouseX && mouseX<(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/7) && (windowHeight*0.4-windowHeight/14)<mouseY && mouseY<(windowHeight*0.4-windowHeight/14 + windowHeight/7))){
+	        		abilityCard = i;
+	        		socket.emit("choseCard", {abilityCard});
+	        		break;
+	      		}
+	    	}
+	  	}
   	}
 }
 
