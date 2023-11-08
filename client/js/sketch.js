@@ -79,14 +79,14 @@ function setup() {
 
     //this instance of client (this player) joining. (Only run once)
     socket.on("newPlayer", function(data) {
-        var player = new Player(data.id, data.name, data.x, data.y, data.size);
+        var player = new Player(data.id, data.name, data.x, data.y, data.size, data.isDeveloper);
         players.push(player);
         console.log("new player");
     });
 
     socket.on("initPack", function(data) {
         for(let i in data.initPack) {
-            var player = new Player(data.initPack[i].id, data.initPack[i].name, data.initPack[i].x, data.initPack[i].y, data.initPack[i].size);
+            var player = new Player(data.initPack[i].id, data.initPack[i].name, data.initPack[i].x, data.initPack[i].y, data.initPack[i].size, data.initPack[i].isDeveloper);
             players.push(player);
             console.log("player init with: "+myId);
         }
@@ -352,9 +352,10 @@ function centerButton() {
 //  	chatInp.size(titleWidth/2, windowHeight/15)
 // }
 
-var Player = function(id, name, x, y, size){
+var Player = function(id, name, x, y, size, isDeveloper){
 	this.id = id;
 	this.name = name;
+	this.isDeveloper = isDeveloper
 	this.x = x;
 	this.y = y;
 	this.size = size;
@@ -413,7 +414,11 @@ var Player = function(id, name, x, y, size){
 	this.drawName = function(){
 		push();
 		translate(this.x, this.y);
-		fill(0, 0, 0);
+		if(this.isDeveloper){
+			fill(160,32,240);
+		} else{
+			fill(0, 0, 0);
+		}
 		textSize(26);
 		textAlign(CENTER);
 		text(this.name, 0, -this.size*1.1-this.size * 0.10);

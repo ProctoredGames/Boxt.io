@@ -49,7 +49,15 @@ io.on('connection', function(socket) {
     })
 
     socket.on("imReady", (data) => { //player joins
-        player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 5);
+        var playerDeveloper
+        if(data.name === "iAmYoda632omg"){ //its a secret shhh
+          playerDeveloper = true
+          data.name = "Proctor - DEV"
+        } else{
+          playerDeveloper = false
+        }
+        player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 5, playerDeveloper);
+      
         players.push(player);
 
         socket.emit("yourId", {id: player.id});
@@ -219,12 +227,12 @@ var DashTime = 30;
 var ChargeTime = 20;
 
 var BoxRollCooldown = 250;
-var DomeRollCooldown = 310;
+var DomeRollCooldown = 500;
 var SpikeRollCooldown = 280;
-var HideCooldown = 250;
-var StompCooldown = 250;
+var HideCooldown = 400;
+var StompCooldown = 200;
 var JumpStompCooldown = 300;
-var ShockwaveCooldown = 280;
+var ShockwaveCooldown = 250;
 var DashCooldown = 250;
 var ChargeCooldown = 300;
 
@@ -234,7 +242,7 @@ var SpikeRollAngle = (3.14159/2)/SpikeRollTime;
 
 var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
-var Player = function(id, name, x, y, XP){
+var Player = function(id, name, x, y, XP, isDeveloper){
   
   this.getSize = function(){
     var modifier = 3000;
@@ -245,6 +253,7 @@ var Player = function(id, name, x, y, XP){
   
 	this.id = id;
 	this.name = name;
+  this.isDeveloper = isDeveloper;
 	this.x = x;
 	this.y = y;
   
@@ -369,11 +378,16 @@ var Player = function(id, name, x, y, XP){
     for (let b in bots){
       var hitLeftSide = bots[b].x+bots[b].size/2>this.x-this.size/2 && bots[b].x-bots[b].size/2<this.x-this.size/2
       var hitRightSide = this.x+this.size/2>bots[b].x-bots[b].size/2 && this.x+this.size/2<bots[b].x+bots[b].size/2 
-      var hitTopSide = bots[b].y>this.y-this.size && bots[b].y-bots[b].size<this.y-this.size
-      var hitBottomSide = this.y>bots[b].y-bots[b].size && this.y-this.size<bots[b].y-bots[b].size
-
+      var hitTopSide = bots[b].y-bots[b].size/4>this.y-this.size/4-this.size*0.75 && bots[b].y-bots[b].size/4-bots[b].size*0.75<this.y-this.size/4-this.size*0.75
+      var hitBottomSide = this.y-this.size/4>bots[b].y-bots[b].size/4-bots[b].size*0.75 && this.y-this.size/4-this.size*0.75<bots[b].y-bots[b].size/4-bots[b].size*0.75
+  
+      if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp")){
+        this.jumpDelta = this.jumpForce
+      }
       if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
-        bots[b].HP-= this.size/5;
+        if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp"))){
+          bots[b].HP-= this.size/5;
+        }
         if(hitLeftSide){
           if(this.size>bots[b].size){
             if(bots[b].x > 0){
@@ -407,7 +421,7 @@ var Player = function(id, name, x, y, XP){
           this.progressXP+=bots[b].XP*0.75;
           this.size = this.getSize();
           
-          this.HP += (this.maxHP/3); //for eating the ladybug
+          this.HP += (bots[b].maxHP); //for eating the ladybug
           
           bots[b].die();
         }
@@ -417,9 +431,15 @@ var Player = function(id, name, x, y, XP){
 			if(players[t].id != this.id){
 				var hitLeftSide = players[t].x+players[t].size/2>this.x-this.size/2 && players[t].x-players[t].size/2<this.x-this.size/2
 				var hitRightSide = this.x+this.size/2>players[t].x-players[t].size/2 && this.x+this.size/2<players[t].x+players[t].size/2 
-				var hitTopSide = players[t].y>this.y-this.size && players[t].y-players[t].size<this.y-this.size
-        var hitBottomSide = this.y>players[t].y-players[t].size && this.y-this.size<players[t].y-players[t].size
+				var hitTopSide = players[t].y-players[t].size/4>this.y-this.size/4-this.size*0.75 && players[t].y-players[t].size/4-players[t].size*0.75<this.y-this.size/4-this.size*0.75
+        var hitBottomSide = this.y-this.size/4>players[t].y-players[t].size/4-players[t].size*0.75 && this.y-this.size/4-this.size*0.75<players[t].y-players[t].size/4-players[t].size*0.75
       
+        if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp")){
+          this.jumpDelta = this.jumpForce
+        }
+        if(hitTopSide && (hitLeftSide || hitRightSide) && (players[t].doingAbility && players[t].whatAbility === "JumpStomp")){
+          players[t].jumpDelta = players[t].jumpForce
+        }
         if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
           if(hitLeftSide){
             if(this.size>players[t].size){
@@ -448,26 +468,31 @@ var Player = function(id, name, x, y, XP){
           }
           if(!((this.doingAbility && this.whatAbility == "Hide") || (players[t].doingAbility && players[t].whatAbility == "Hide"))){
             //we need to check everything for both players as the one first in the array will check first
-            if((this.isFlipped && players[t].isFlipped && hitLeftSide) || (this.isFlipped && !players[t].isFlipped && hitLeftSide) ||
-              (!this.isFlipped && players[t].isFlipped && hitRightSide) || (!this.isFlipped && !players[t].isFlipped && hitRightSide)){
-              players[t].HP-= this.size/5;
-              if(players[t].HP<=0){
-                this.XP += players[t].XP*0.75;
-                this.progressXP += players[t].XP*0.75;
-                this.size = this.getSize();
-                
-                players[t].die();
+            if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp")) &&
+              !(hitTopSide && (hitLeftSide || hitRightSide) && (players[t].doingAbility && players[t].whatAbility === "JumpStomp"))){
+              if((this.isFlipped && players[t].isFlipped && hitLeftSide) || (this.isFlipped && !players[t].isFlipped && hitLeftSide) ||
+                (!this.isFlipped && players[t].isFlipped && hitRightSide) || (!this.isFlipped && !players[t].isFlipped && hitRightSide)){
+                players[t].HP-= this.size/5;
+                if(players[t].HP<=0){
+                  this.XP += players[t].XP*0.75;
+                  this.progressXP += players[t].XP*0.75;
+                  this.size = this.getSize();
+                  this.HP += players[t].maxHP/2
+
+                  players[t].die();
+                }
               }
-            }
-            if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
-              (players[t].isFlipped && !this.isFlipped && hitRightSide) || (players[t].isFlipped && this.isFlipped && hitRightSide)){
-              this.HP-= players[t].size/5;
-              if(this.HP<=0){
-                players[t].XP += this.XP*0.75;
-                players[t].progressXP += this.XP*0.75;
-                players[t].size = players[t].getSize();
-                
-                this.die();
+              if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
+                (players[t].isFlipped && !this.isFlipped && hitRightSide) || (players[t].isFlipped && this.isFlipped && hitRightSide)){
+                this.HP-= players[t].size/5;
+                if(this.HP<=0){
+                  players[t].XP += this.XP*0.75;
+                  players[t].progressXP += this.XP*0.75;
+                  players[t].size = players[t].getSize();
+                  players[t].HP += this.maxHP/2
+
+                  this.die();
+                }
               }
             }
           }
@@ -496,7 +521,7 @@ var Player = function(id, name, x, y, XP){
           this.progressXP+= plants[i].flower.XP;
           this.size = this.getSize();
 
-          this.HP += (this.maxHP/10); //for eating the flower
+          // this.HP += (this.maxHP/15); //for eating the flower
 
           sendPlantUpdate();
         } 
@@ -639,7 +664,8 @@ var Player = function(id, name, x, y, XP){
       	//do nothing, only increases speed
         break;
       case "Hide":
-        //do nothing
+        //heal in hide
+        this.HP+= this.maxHP/600
         break;
       default:
         break;
@@ -761,6 +787,7 @@ var Player = function(id, name, x, y, XP){
 			x: this.x,
 			y: this.y,
 			size: this.size,
+      isDeveloper: this.isDeveloper,
 		}
 	}
 
