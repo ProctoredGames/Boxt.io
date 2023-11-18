@@ -50,19 +50,22 @@ io.on('connection', function(socket) {
 
     socket.on("imReady", (data) => { //player joins
         var playerDeveloper
-        if(data.name === "iAmYoda632omg"){ //its a secret shhh
-          playerDeveloper = true
-          data.name = "Proctor - DEV"
+        if(data.name === "4698wilopg7"){ //its a secret shhh
+			playerDeveloper = true
+			data.name = "Proctor - DEV"
+		}else if(data.name === "2984runque6"){
+			playerDeveloper = true
+			data.name = "HourMC - DEV"
         } else{
-          playerDeveloper = false
+			playerDeveloper = false
         }
         player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 5, playerDeveloper);
       
         players.push(player);
 
         socket.emit("yourId", {id: player.id});
-        socket.broadcast.emit('newPlayer', player.getInitPack());
-        socket.emit("initPack", {initPack: getAllPlayersInitPack()});
+        socket.broadcast.emit('newPlayer', player.getInitPack()); //sends new guy's data to everyone
+        socket.emit("initPack", {initPack: getAllPlayersInitPack()}); //sends everyone's data to new player
         socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
         socket.emit("botInitPack", {botInitPack: getAllBotsInitPack()});
         socket.emit("crackInitPack", {crackInitPack: getAllCracksInitPack()});
@@ -76,6 +79,84 @@ io.on('connection', function(socket) {
         player.isFlipped = data.isFlipped;
         player.windowWidth = data.windowWidth;
         player.windowHeight = data.windowHeight;
+    })
+  
+    socket.on("chatMessage", (data) => {
+      var thisMessagePack = {}
+      thisMessagePack.message = data.chatMessage
+      thisMessagePack.id = player.id
+	  if(player.isDeveloper){
+		  switch(data.chatMessage){
+			  case "/resetall":
+			  for(let i in players){
+				  players[i].reset()
+			  }
+			  break
+        case "/reset":
+				player.reset()
+			  break
+			  case "/sizeall 3":
+			  for(let i in players){
+				  players[i].XP = Math.random()*300+3000
+          players[i].progressXP = Math.random()*300+3000
+			  }
+			  break
+			  case "/sizeall 2":
+			  for(let i in players){
+				  players[i].XP = Math.random()*300+1500
+          players[i].progressXP = Math.random()*300+1500
+			  }
+			  break
+			  case "/sizeall 1":
+			  for(let i in players){
+				  players[i].XP = Math.random()*300+0
+          players[i].progressXP = Math.random()*300+0
+			  }
+			  break
+			  case "/size 3":
+			  player.XP = Math.random()*300+3000
+        player.progressXP = Math.random()*300+3000
+			  break
+			  case "/size 2":
+			  player.XP = Math.random()*300+1500
+        player.progressXP = Math.random()*300+1500
+			  break
+			  case "/size 1":
+			  player.XP = Math.random()*300+0
+        player.progressXP = Math.random()*300+0
+			  break
+        
+        case "/speedall 3":
+			  for(let i in players){
+				  players[i].walkSpeed = 6
+			  }
+			  break
+			  case "/speedall 2":
+			  for(let i in players){
+				   players[i].walkSpeed = 3
+			  }
+			  break
+			  case "/speedall 1":
+			  for(let i in players){
+				   players[i].walkSpeed = 1.5
+			  }
+			  break
+			  case "/speed 3":
+			  player.walkSpeed = 6
+			  break
+			  case "/speed 2":
+			  player.walkSpeed = 3
+			  break
+			  case "/speed 1":
+			  player.walkSpeed = 1.5
+			  break
+        
+			  default:
+			  break
+		  }
+	  }
+      socket.broadcast.emit("getChat", {messagePack: thisMessagePack}); //send to everyone else
+      socket.emit("getChat", {messagePack: thisMessagePack}); //send back to sender
     })
 
     // socket.on("requestData", (data) => {
@@ -148,6 +229,9 @@ io.on('connection', function(socket) {
         player.whatAbility = player.abilitySet[data.whatAbility];
         player.doingAbility = true;
         player.bodyAngle = 0;
+      }
+      if(player.isDeveloper){
+        player.cooldownSet[data.whatAbility] = 0
       }
         
     })
@@ -681,6 +765,23 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   this.die = function(){
     this.x = Math.random()*mapSize;
     this.XP *= 0.25;
+    this.upgrade = 1; //player on first upgrade
+    this.targetXP = 20;
+    this.size = this.getSize();
+    this.walkSpeed = 1.5;
+    this.bumpForce = 0;
+    this.abilityCardsActive = false;
+    this.abilityCards = [];
+    this.abilitySet = [];
+    this.maxHP = this.size;
+    this.HP = this.maxHP;
+    this.shellType = "Box";
+  }
+  
+  this.reset = function(){
+    this.x = Math.random()*mapSize;
+    this.XP = 5;
+    this.progressXP = 5;
     this.upgrade = 1; //player on first upgrade
     this.targetXP = 20;
     this.size = this.getSize();
