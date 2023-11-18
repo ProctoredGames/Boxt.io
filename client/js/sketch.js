@@ -2,6 +2,8 @@ var socket;
 var myPlayer;
 var myId;
 
+var chatConsole = document.getElementById("chatConsole");
+
 //leg has a total range of 20% of the turtle
 var upperLegBound = 0.025;
 var lowerLegBound = -0.075;
@@ -25,7 +27,7 @@ var mapSize = 6000;
 function preload(){
 	shellBox = loadImage('assets/shellBox.png');
 	shellDome = loadImage('assets/shellDome.png');
-  	shellSpike = loadImage('assets/shellSpike.png');
+  shellSpike = loadImage('assets/shellSpike.png');
 	// turtle = loadImage('assets/turtle.png');
 	turtleHead = loadImage('assets/turtleHead.png');
 	// turtleJaw = loadImage('assets/turtle.png');
@@ -44,8 +46,8 @@ function preload(){
 	ladybug = loadImage('assets/ladybug.png');
 	ladybugFoot = loadImage('assets/ladybugFoot.png');
   
-  	crackImg = loadImage('assets/cracks.png');
-  	title = loadImage('assets/title.png');
+  crackImg = loadImage('assets/cracks.png');
+  title = loadImage('assets/title.png');
 }
 
 var botNames = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
@@ -66,8 +68,12 @@ function setup() {
     spectateY = 0;
     spectateDir = 1;
     spectateSpeed = 0.5;
+    
+    typingChat = false;
 
     socket = io();
+    
+    playerChat = "";
 
     playerName = "boxt.io";
 
@@ -147,6 +153,15 @@ function setup() {
     		console.log("New Crack");
     	}
     });
+  
+    socket.on("getChat", function(data){
+      for(let i in players) {
+        if(players[i].id === data.messagePack.id){
+          players[i].message = data.messagePack.message
+          // alert(data.messagePack.message)
+        }
+      }
+    });
 
     socket.on("plantUpdatePack", function(data) {
         for(let i in data.plantUpdatePack) {
@@ -192,11 +207,33 @@ function setup() {
 	rectMode(CORNER);
 	textAlign(CORNER, CORNER);
 	nameInp = createInput("");
-  	centerNameInput();
-  	nameInp.input(setName);
+	centerNameInput();
+	nameInp.input(setName);
+	nameInp.elt.focus();
+	nameInp.style('text-align', 'center');
+	nameInp.style('font-size', '30');
 	button = createButton('PLAY');
 	centerButton();
-  	button.mousePressed(startGame);
+	button.mousePressed(startGame);
+	button.style('font-size', '30');
+}
+
+function quickSort(items) {
+  if (items.length > 1) {
+    let pivot = items[0];
+    let left = [];
+    let right = [];
+    for (let i = 1; i < items.length; i++) {
+      if (items[i].XP > pivot.XP) {
+        left.push(items[i]);
+      } else {
+        right.push(items[i]);
+      }
+    }
+    return quickSort(left).concat(pivot, quickSort(right));
+  } else {
+    return items;
+  }
 }
 
 //called every frame
@@ -256,20 +293,21 @@ function draw(){
   for(let i in cracks) {
   	cracks[i].draw();
   }
-
+  
   for(let i in bots) {
   	bots[i].draw();
   	if(bots[i].HP != bots[i].maxHP){
   		bots[i].drawStatus();
   	}
   }
+  
+  var rankedPlayers = quickSort(players);
 
-  for(let i in players) {
-    players[i].draw();
-    if(players[i].HP != players[i].maxHP){
-      players[i].drawStatus();
-    }
-    players[i].drawName();
+  for(let i in rankedPlayers) {
+    rankedPlayers[i].draw();
+    rankedPlayers[i].drawStatus();
+    rankedPlayers[i].drawName();
+    rankedPlayers[i].drawMessage();
   }
 
   pop();
@@ -281,34 +319,33 @@ function draw(){
   }
   if(!isSpectating){
   	fill(0,0,0,200);
-	  rect(windowHeight*0.02, windowHeight*0.02, windowHeight*0.25, windowHeight*0.3, 20);
+	  rect(windowHeight*0.02, windowHeight*0.02, windowHeight*0.26, windowHeight*0.3, 20);
 	  fill(0, 200, 0);
 	  textSize(17);
 	  textAlign(CENTER);
-	  text("LEADERBOARD", windowHeight*0.02, (windowHeight*0.045), windowHeight*0.25, windowHeight*0.03)
+	  text("LEADERBOARD", windowHeight*0.025, (windowHeight*0.04), windowHeight*0.25, windowHeight*0.03)
 	  textSize(15);
 	  textAlign(LEFT);
 
-	  var rankedPlayers = players;
+	  var rankedPlayers = quickSort(players);
 
 	  var count = 1;
 	  for(let i in rankedPlayers){
 	    if(rankedPlayers[i].id === myId){
 	        fill(255, 255, 0);
 	      }
-	      text(count + " | " + players[i].name + " : " + Math.round(players[i].XP), windowHeight*0.05, (windowHeight*0.08)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
-	      if(players[i].id === myId){
+	      text(count + " | " + rankedPlayers[i].name + " : " + Math.round(rankedPlayers[i].XP), windowHeight*0.04, (windowHeight*0.075)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
+	      if(rankedPlayers[i].id === myId){
 	        fill(0, 200, 0);
 	      }
+		if(count === 8){
+			break;
+		}
 	    count ++;
 	  }
   } else{
   	image(title, windowWidth/2, windowHeight/2-(windowHeight*0.2), windowHeight/5 * (1300/300), windowHeight/5);
   }
-}
-
-function setName(){
-	playerName = this.value()
 }
 
 function startGame(){
@@ -324,20 +361,42 @@ function startGame(){
   	// chatInp.input(setName);
 }
 
+function setName(){
+	playerName = this.value()
+  if (playerName.length > 12) {
+    playerName = playerName.substring(0, 12); // Truncate input if it exceeds the limit
+  }
+}
+
+function setChat(){
+  playerChat = this.value()
+  if (playerChat.length > 30) {
+    playerChat = playerChat.substring(0, 30); // Truncate input if it exceeds the limit
+  }
+}
+
 function windowResized() {
   	resizeCanvas(windowWidth, windowHeight);
   	if(isSpectating){
   		centerNameInput()
   		centerButton()
   	} else{
-  		centerChatInput()
-  	}
+      if(typingChat){
+        centerChatInput()
+      }
+    }
 }
 
 function centerNameInput() {
 	let titleWidth = windowHeight/5 * (1300/300)
  	nameInp.position(windowWidth/2-(titleWidth/2)/2, windowHeight/2 - (windowHeight*0.08));
  	nameInp.size(titleWidth/2, windowHeight/15)
+}
+
+function centerChatInput() {
+	let titleWidth = windowHeight/5 * (1300/300)
+ 	chatInp.position(windowWidth/2-(titleWidth/2)/2, windowHeight*0.9 - (windowHeight*0.08));
+ 	chatInp.size(titleWidth/2, windowHeight/15)
 }
 
 function centerButton() {
@@ -364,13 +423,15 @@ var Player = function(id, name, x, y, size, isDeveloper){
 	this.upgrade = 1;
 	this.isFlipped = false;
 	this.headAngle = 0;
+  
+  this.message = "";
 
 	this.XP = 0;
 
 	this.doingAbility = false;
 	this.abilitySet = [];
-  	this.cooldownLength = [];
-  	this.cooldownSet = [];
+  this.cooldownLength = [];
+  this.cooldownSet = [];
 	this.whatAbility;
 	this.bodyAngle = 0;
 
@@ -421,9 +482,31 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		}
 		textSize(26);
 		textAlign(CENTER);
-		text(this.name, 0, -this.size*1.1-this.size * 0.10);
+		text(this.name, 0, -this.size*1-this.size * 0.15);
 		pop();
-	 }
+	}
+  
+  this.drawMessage = function(){
+    push();
+	translate(this.x, this.y);
+	fill(255, 255, 0);
+	textSize(24);
+	textAlign(CENTER);
+	if(!(this.doingAbility && (this.whatAbility === "Hide" || this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll"))){
+		if(this.isFlipped){
+			text(this.message, -this.size*0.6, -this.size*0.65);
+		} else{
+			text(this.message, this.size*0.6, -this.size*0.65);
+		}
+	} else{
+		if(this.isFlipped){
+			text(this.message, 0, -this.size*0.65);
+		} else{
+			text(this.message, 0, -this.size*0.65);
+		}
+	}
+	pop();
+  }
 
 	this.drawStatus = function(){
 		var percentage = this.HP/this.maxHP
@@ -433,9 +516,9 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		push();
 		translate(this.x, this.y);
 		fill(0, 100, 0);
-		rect(-this.size/2, -this.size*1.1-this.size * 0.30, this.size, this.size * 0.20, 10)
+		rect(-this.size/2, -this.size*1-this.size * 0.30, this.size, this.size * 0.20, 10)
 		fill(0, 250, 0);
-		rect(-this.size/2, -this.size*1.1-this.size * 0.30, this.size*percentage, this.size * 0.20, 10);
+		rect(-this.size/2, -this.size*1-this.size * 0.30, this.size*percentage, this.size * 0.20, 10);
 		pop();
 	}
 
@@ -447,9 +530,19 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		}
 		
 		fill(0, 100, 0);
-	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2, windowWidth*0.03, 20)
+	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2, windowHeight*0.08, 20)
 	    fill(0, 250, 0);
-	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2*percentage, windowWidth*0.03, 20)
+	    rect(windowWidth * 0.05, windowHeight*0.85, windowWidth*0.2*percentage, windowHeight*0.08, 20)
+		
+		percentage = this.HP/this.maxHP;
+		if(percentage > 1.00){//bar cant display over 100%
+			percentage = 1.00
+		}
+		
+		fill(0, 100, 0);
+	    rect(windowWidth * 0.05, windowHeight*0.75, windowWidth*0.125, windowHeight*0.08, 20)
+	    fill(255, 255, 255);
+	    rect(windowWidth * 0.05, windowHeight*0.75, windowWidth*0.125*percentage, windowHeight*0.08, 20)
 
 
 	    var c = 0; //we need to render ui positions forwards
@@ -521,8 +614,8 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		}
 
 		push();
-    translate(this.x, this.y);
-    push();
+		translate(this.x, this.y);
+		push();
 		if(!(this.isFlipped)){
 			scale(1, 1)
 		} else{
@@ -602,9 +695,9 @@ var Bot = function(id, x, y, size){
 		push();
 		translate(this.x, this.y);
 		fill(0, 100, 0);
-		rect(-this.size/2, -this.size*1-this.size * 0.22, this.size, this.size * 0.22, 10)
+		rect(-this.size/2, -this.size*1-this.size * 0.30, this.size, this.size * 0.20, 10)
 		fill(0, 250, 0);
-		rect(-this.size/2, -this.size*1-this.size * 0.22, this.size*percentage, this.size * 0.22, 10);
+		rect(-this.size/2, -this.size*1-this.size * 0.30, this.size*percentage, this.size * 0.20, 10);
 		pop();
 	}
 	this.draw = function(){
@@ -792,6 +885,30 @@ function keyPressed() {
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
+  if (key === "Enter"){
+    if(!isSpectating){
+      typingChat = !typingChat
+      if(!typingChat){
+		//send the chat
+        var chatMessage = playerChat
+        if(chatMessage === ""){
+          chatMessage = " "
+        }
+        socket.emit("chatMessage", {chatMessage});
+        removeElements();
+      } else{
+        playerChat = ""
+        chatInp = createInput("")
+        centerChatInput()
+        chatInp.input(setChat);
+        chatInp.elt.focus();
+        chatInp.style('text-align', 'center');
+        chatInp.style('font-size', '30');
+      }
+    } else{
+      startGame()
+    }
+  }
 }
 
 function mouseClicked() {
