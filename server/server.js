@@ -50,14 +50,17 @@ io.on('connection', function(socket) {
 
     socket.on("imReady", (data) => { //player joins
         var playerDeveloper
-        if(data.name === "4698wilopg7"){ //its a secret shhh
-			playerDeveloper = true
-			data.name = "Proctor - DEV"
-		}else if(data.name === "2984runque6"){
-			playerDeveloper = true
-			data.name = "HourMC - DEV"
+        if(data.name === "?PROCTOR++!"){ //its a secret shhh
+			    playerDeveloper = true
+			    data.name = "Proctor - DEV"
+        }else if(data.name === "?TUMASAKIII!"){
+          playerDeveloper = true
+          data.name = "Tumasakiii - MOD"
+        }else if(data.name === "?HOURMC++!"){
+			    playerDeveloper = true
+			    data.name = "HourMC - DEV"
         } else{
-			playerDeveloper = false
+			    playerDeveloper = false
         }
         player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 5, playerDeveloper);
       
@@ -306,7 +309,7 @@ var SpikeRollTime = 10;
 var HideTime = 120;
 var StompTime = 5;
 var JumpStompTime = 100000; //max ticks turtle can be in air for
-var ShockwaveTime = 10;
+var ShockwaveTime = 40;
 var DashTime = 30;
 var ChargeTime = 20;
 
