@@ -1,4 +1,4 @@
-var path = require("path");
+3var path = require("path");
 var http = require("http");
 var express = require("express");
 var socketIO = require("socket.io");
@@ -309,7 +309,7 @@ var SpikeRollTime = 10;
 var HideTime = 120;
 var StompTime = 5;
 var JumpStompTime = 100000; //max ticks turtle can be in air for
-var ShockwaveTime = 40;
+var ShockwaveTime = 20;
 var DashTime = 30;
 var ChargeTime = 20;
 
@@ -470,6 +470,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   
       if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp")){
         this.jumpDelta = this.jumpForce
+        this.abilityTime = 10000
       }
       if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
         if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp"))){
@@ -523,6 +524,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       
         if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp")){
           this.jumpDelta = this.jumpForce
+          this.abilityTime = 10000
         }
         if(hitTopSide && (hitLeftSide || hitRightSide) && (players[t].doingAbility && players[t].whatAbility === "JumpStomp")){
           players[t].jumpDelta = players[t].jumpForce
