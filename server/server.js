@@ -12,6 +12,7 @@ let io = socketIO(server);
 app.use(express.static(publicPath));
 
 var players = [];
+var grass = [];
 var plants = [];
 var bots = [];
 var cracks = [];
@@ -24,17 +25,22 @@ var mapSize = 6000;
 var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 
 server.listen(port, function(){//when the server starts, generate the map with this function
-	var plant = {};
-	for(let i = 0; i< (mapSize/300); i++){
-		plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+250, true, true);
-		plants.push(plant);
-	}
+  var plant = {};
+  for(let i = 0; i< (mapSize/250); i++){
+    plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+250, true, true);
+    plants.push(plant);
+  }
+  var patch = {};
+  for(let i = 0; i< (mapSize/400); i++){
+    patch = new Grass(i, Math.random()*mapSize, (Math.random()*250)+150);
+    grass.push(patch);
+  }
   var bot = {};
   for(let i = 0; i<4; i++){
     bot = new Bot(i, (Math.random()*mapSize), 0, (Math.random()*200));
     bots.push(bot);
   }
-	console.log("Server Started on port "+ port +"!");
+  console.log("Server Started on port "+ port +"!");
 });
 
 io.on('connection', function(socket) {
@@ -45,6 +51,7 @@ io.on('connection', function(socket) {
     //not for beta dev version  
     socket.on("loadedPage", (data) =>{
       socket.emit("initPack", {initPack: getAllPlayersInitPack()});
+      socket.emit("grassInitPack", {grassInitPack: getAllGrassInitPack()});
       socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
       socket.emit("botInitPack", {botInitPack: getAllBotsInitPack()});
       socket.emit("crackInitPack", {crackInitPack: getAllCracksInitPack()});
@@ -53,16 +60,16 @@ io.on('connection', function(socket) {
     socket.on("imReady", (data) => { //player joins
         var playerDeveloper
         if(data.name === "?PROCTOR++!"){ //its a secret shhh
-			    playerDeveloper = true
-			    data.name = "Proctor - DEV"
+          playerDeveloper = true
+          data.name = "Proctor - DEV"
         }else if(data.name === "?TUMASAKIII!"){
           playerDeveloper = true
           data.name = "Tumasakiii - MOD"
         }else if(data.name === "?HOURMC++!"){
-			    playerDeveloper = true
-			    data.name = "HourMC - DEV"
+          playerDeveloper = true
+          data.name = "HourMC - DEV"
         } else{
-			    playerDeveloper = false
+          playerDeveloper = false
         }
         player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 5, playerDeveloper);
     
@@ -71,6 +78,7 @@ io.on('connection', function(socket) {
         socket.emit("yourId", {id: player.id});
         socket.broadcast.emit('newPlayer', player.getInitPack()); //sends new guy's data to everyone
         socket.emit("initPack", {initPack: getAllPlayersInitPack()}); //sends everyone's data to new player
+        socket.emit("grassInitPack", {grassInitPack: getAllGrassInitPack()});
         socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
         socket.emit("botInitPack", {botInitPack: getAllBotsInitPack()});
         socket.emit("crackInitPack", {crackInitPack: getAllCracksInitPack()});
@@ -90,76 +98,76 @@ io.on('connection', function(socket) {
       var thisMessagePack = {}
       thisMessagePack.message = data.chatMessage
       thisMessagePack.id = player.id
-  	  if(player.isDeveloper){
-  		  switch(data.chatMessage){
-  			  case "/resetall":
-  			  for(let i in players){
-  				  players[i].reset()
-  			  }
-  			  break
+      if(player.isDeveloper){
+        switch(data.chatMessage){
+          case "/resetall":
+          for(let i in players){
+            players[i].reset()
+          }
+          break
           case "/reset":
-  				player.reset()
-  			  break
-  			  case "/sizeall 3":
-  			  for(let i in players){
-  				  players[i].XP = Math.random()*300+3000
+          player.reset()
+          break
+          case "/sizeall 3":
+          for(let i in players){
+            players[i].XP = Math.random()*300+3000
             players[i].progressXP = Math.random()*300+3000
-  			  }
-  			  break
-  			  case "/sizeall 2":
-  			  for(let i in players){
-  				  players[i].XP = Math.random()*300+1500
+          }
+          break
+          case "/sizeall 2":
+          for(let i in players){
+            players[i].XP = Math.random()*300+1500
             players[i].progressXP = Math.random()*300+1500
-  			  }
-  			  break
-  			  case "/sizeall 1":
-  			  for(let i in players){
-  				  players[i].XP = Math.random()*300+0
+          }
+          break
+          case "/sizeall 1":
+          for(let i in players){
+            players[i].XP = Math.random()*300+0
             players[i].progressXP = Math.random()*300+0
-  			  }
-  			  break
-  			  case "/size 3":
-  			  player.XP = Math.random()*300+3000
+          }
+          break
+          case "/size 3":
+          player.XP = Math.random()*300+3000
           player.progressXP = Math.random()*300+3000
-  			  break
-  			  case "/size 2":
-  			  player.XP = Math.random()*300+1500
+          break
+          case "/size 2":
+          player.XP = Math.random()*300+1500
           player.progressXP = Math.random()*300+1500
-  			  break
-  			  case "/size 1":
-  			  player.XP = Math.random()*300+0
+          break
+          case "/size 1":
+          player.XP = Math.random()*300+0
           player.progressXP = Math.random()*300+0
-  			  break
+          break
           
           case "/speedall 3":
-  			  for(let i in players){
-  				  players[i].walkSpeed = 6
-  			  }
-  			  break
-  			  case "/speedall 2":
-  			  for(let i in players){
-  				   players[i].walkSpeed = 3
-  			  }
-  			  break
-  			  case "/speedall 1":
-  			  for(let i in players){
-  				   players[i].walkSpeed = 1.5
-  			  }
-  			  break
-  			  case "/speed 3":
-  			  player.walkSpeed = 6
-  			  break
-  			  case "/speed 2":
-  			  player.walkSpeed = 3
-  			  break
-  			  case "/speed 1":
-  			  player.walkSpeed = 1.5
-  			  break
+          for(let i in players){
+            players[i].walkSpeed = 6
+          }
+          break
+          case "/speedall 2":
+          for(let i in players){
+             players[i].walkSpeed = 3
+          }
+          break
+          case "/speedall 1":
+          for(let i in players){
+             players[i].walkSpeed = 1.5
+          }
+          break
+          case "/speed 3":
+          player.walkSpeed = 6
+          break
+          case "/speed 2":
+          player.walkSpeed = 3
+          break
+          case "/speed 1":
+          player.walkSpeed = 1.5
+          break
           
-  			  default:
-  			  break
-  		  }
-  	  }
+          default:
+          break
+        }
+      }
       socket.broadcast.emit("getChat", {messagePack: thisMessagePack}); //send to everyone else
       socket.emit("getChat", {messagePack: thisMessagePack}); //send back to sender
     })
@@ -170,9 +178,9 @@ io.on('connection', function(socket) {
     // })
   
     // socket.on("commandData", (data) => {
-    // 	player.XP += data.XPChange;
-    // 	player.progressXP += player.progressXP;
-    // 	player.speed += data.speedChange;
+    //  player.XP += data.XPChange;
+    //  player.progressXP += player.progressXP;
+    //  player.speed += data.speedChange;
     // })
 
     socket.on("usedAbility", (data) =>{
@@ -248,17 +256,17 @@ io.on('connection', function(socket) {
 
     socket.on("choseCard", (data) =>{
       player.abilityCardsActive = false;
-    	if(player.upgrade!=3){
+      if(player.upgrade!=3){
         if(player.upgrade!=4){
           player.abilitySet.push(player.abilityCards[data.abilityCard]);
           player.cooldownLength.push(0);
           player.cooldownSet.push(0);
         }
-    	} else{ //upgrade existing ability instead
-    		player.abilitySet[player.abilitySet.length-1] = player.abilityCards[data.abilityCard];
+      } else{ //upgrade existing ability instead
+        player.abilitySet[player.abilitySet.length-1] = player.abilityCards[data.abilityCard];
         player.cooldownLength[player.abilitySet.length-1] = 0;
         player.cooldownSet[player.abilitySet.length-1] = 0;
-    	}
+      }
       player.abilityCards = []; //stops hacking by making indices worthless after used
       
       player.progressXP = player.progressXP-player.targetXP;
@@ -342,27 +350,27 @@ var Player = function(id, name, x, y, XP, isDeveloper){
     return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
   }
   
-	this.id = id;
-	this.name = name;
+  this.id = id;
+  this.name = name;
   this.isDeveloper = isDeveloper;
-	this.x = x;
-	this.y = y;
+  this.x = x;
+  this.y = y;
   
   this.bumpForce = 0;
 
-	this.doingAbility = false;
-	this.abilityTimer;
-	this.whatAbility;
-	this.abilitySet = [];
+  this.doingAbility = false;
+  this.abilityTimer;
+  this.whatAbility;
+  this.abilitySet = [];
   this.cooldownLength = []; //total cooldown
   this.cooldownSet = []; //cooldown left
-	this.bodyAngle = 0;
+  this.bodyAngle = 0;
 
-	this.abilityCards = [];
-	this.abilityCardsActive = false;
+  this.abilityCards = [];
+  this.abilityCardsActive = false;
 
   this.XP = XP;
-	this.progressXP = this.XP;
+  this.progressXP = this.XP;
   this.size = this.getSize();
 
   this.jumpForce = 50;
@@ -372,43 +380,43 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   this.maxHP = this.size;
   this.HP = this.maxHP;
   
-	this.upgrade = 1; //player on first upgrade
-	this.targetXP = XPtargets[this.upgrade];
-	this.walkSpeed = 1.5;
-	this.velY = 0;
-	this.legOffsetX = 0;
-	this.legOffsetY = 0;
-	this.legDirX = 1;
-	this.isFlipped;
-	this.frontLegUp = 1;
-	this.doMovement = true;
-	this.headAngle = 0;
-	this.distXToMouse = 0;
-	this.shellType = "Box";
+  this.upgrade = 1; //player on first upgrade
+  this.targetXP = XPtargets[this.upgrade];
+  this.walkSpeed = 1.5;
+  this.velY = 0;
+  this.legOffsetX = 0;
+  this.legOffsetY = 0;
+  this.legDirX = 1;
+  this.isFlipped;
+  this.frontLegUp = 1;
+  this.doMovement = true;
+  this.headAngle = 0;
+  this.distXToMouse = 0;
+  this.shellType = "Box";
 
-	this.windowWidth;
-	this.windowHeight;
+  this.windowWidth;
+  this.windowHeight;
 
-	this.getSpeed = function(){
-		if(this.doingAbility){
-			switch(this.whatAbility){
-			case "boxRoll":
-				return (boxRollAngle)*this.size;
+  this.getSpeed = function(){
+    if(this.doingAbility){
+      switch(this.whatAbility){
+      case "boxRoll":
+        return (boxRollAngle)*this.size;
         break;
-			case "domeRoll":
-				return (domeRollAngle)*this.size;
+      case "domeRoll":
+        return (domeRollAngle)*this.size;
         break;
-			case "spikeRoll":
-				return (spikeRollAngle)*this.size;
+      case "spikeRoll":
+        return (spikeRollAngle)*this.size;
         break;
       case "stomp":
-				return this.walkSpeed/2;
+        return this.walkSpeed/2;
         break;
       case "jumpStomp":
-				return this.walkSpeed*20;
+        return this.walkSpeed*20;
         break;
       case "shockwave":
-				return this.walkSpeed/2;
+        return this.walkSpeed/2;
         break;
       case "dash":
         return this.walkSpeed*5;
@@ -417,53 +425,53 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       case "hide":
         return 0;
         break;
-			default: //if not specified, assume regular movement
-				return this.walkSpeed;
+      default: //if not specified, assume regular movement
+        return this.walkSpeed;
         break;
-			}
-		} else{
-			return this.walkSpeed
-		}
-	}
+      }
+    } else{
+      return this.walkSpeed
+    }
+  }
 
-	this.doUpgrade = function(upgrade){
-		if(!(this.abilityCardsActive)){
-			switch(upgrade){
-			case 1:
-				this.abilityCardsActive = true;
-				this.abilityCards = ["hide"];
-				break;
-			case 2:
-				this.abilityCardsActive = true;
-				this.abilityCards = ["boxRoll", "stomp", "dash"];
+  this.doUpgrade = function(upgrade){
+    if(!(this.abilityCardsActive)){
+      switch(upgrade){
+      case 1:
+        this.abilityCardsActive = true;
+        this.abilityCards = ["hide"];
         break;
-			case 3:
-				this.abilityCardsActive = true;
-				switch(this.abilitySet[this.abilitySet.length-1]){
-				case "boxRoll":
-					this.abilityCards = ["domeRoll", "spikeRoll"];
-					break;
-				case "stomp":
-					this.abilityCards = ["jumpStomp", "shockwave"];
-					break;
+      case 2:
+        this.abilityCardsActive = true;
+        this.abilityCards = ["boxRoll", "stomp", "dash"];
+        break;
+      case 3:
+        this.abilityCardsActive = true;
+        switch(this.abilitySet[this.abilitySet.length-1]){
+        case "boxRoll":
+          this.abilityCards = ["domeRoll", "spikeRoll"];
+          break;
+        case "stomp":
+          this.abilityCards = ["jumpStomp", "shockwave"];
+          break;
         case "dash":
           this.abilityCards = ["charge"];
-					break;
-				default:
-					console.log("ability cannot be upgraded");
-					this.abilityCards = ["ERROR"];
-					break;
-				}
+          break;
+        default:
+          console.log("ability cannot be upgraded");
+          this.abilityCards = ["ERROR"];
+          break;
+        }
         break;
-			case 4:
+      case 4:
         this.abilityCardsActive = true;
-				this.abilityCards = ["Grow Turtle!"];
+        this.abilityCards = ["Grow Turtle!"];
         break;
-	    default:
-	    	break;
-			}
-		}
-	}
+      default:
+        break;
+      }
+    }
+  }
   
   this.handleCollisions = function(){
     for (let b in bots){
@@ -488,7 +496,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           } else{
             if(this.x < mapSize){
               this.x += (bots[b].walkSpeed+this.getSpeed());
-            }	
+            } 
           }
           this.bumpForce = 5
           bots[b].bumpForce = -5
@@ -520,10 +528,10 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       }
     }
     for(let t in players){
-			if(players[t].id != this.id){
-				var hitLeftSide = players[t].x+players[t].size/2>this.x-this.size/2 && players[t].x-players[t].size/2<this.x-this.size/2
-				var hitRightSide = this.x+this.size/2>players[t].x-players[t].size/2 && this.x+this.size/2<players[t].x+players[t].size/2 
-				var hitTopSide = players[t].y-players[t].size/4>this.y-this.size/4-this.size*0.75 && players[t].y-players[t].size/4-players[t].size*0.75<this.y-this.size/4-this.size*0.75
+      if(players[t].id != this.id){
+        var hitLeftSide = players[t].x+players[t].size/2>this.x-this.size/2 && players[t].x-players[t].size/2<this.x-this.size/2
+        var hitRightSide = this.x+this.size/2>players[t].x-players[t].size/2 && this.x+this.size/2<players[t].x+players[t].size/2 
+        var hitTopSide = players[t].y-players[t].size/4>this.y-this.size/4-this.size*0.75 && players[t].y-players[t].size/4-players[t].size*0.75<this.y-this.size/4-this.size*0.75
         var hitBottomSide = this.y-this.size/4>players[t].y-players[t].size/4-players[t].size*0.75 && this.y-this.size/4-this.size*0.75<players[t].y-players[t].size/4-players[t].size*0.75
       
         if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp")){
@@ -542,7 +550,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
             } else{
               if(this.x < mapSize){
                 this.x += (players[t].getSpeed()+this.getSpeed());
-              }	
+              } 
             }
             this.bumpForce = 5
             players[t].bumpForce = -5
@@ -589,20 +597,20 @@ var Player = function(id, name, x, y, XP, isDeveloper){
               }
             }
           }
-				}
-			}
-		}
+        }
+      }
+    }
   }
   
-	this.handlePlantXP = function(){
-		var headX;
-		var headY;
-		var range;
-		if(!this.isFlipped){
-			headX = this.x+this.size*0.65;
-		} else{
-			headX = this.x-this.size*0.65;
-		}
+  this.handlePlantXP = function(){
+    var headX;
+    var headY;
+    var range;
+    if(!this.isFlipped){
+      headX = this.x+this.size*0.65;
+    } else{
+      headX = this.x-this.size*0.65;
+    }
     headY = this.y-this.size*0.44;
     range = this.size*0.075;
 
@@ -632,9 +640,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         }
       }
     }
-	}
+  }
 
-	this.playAbility = function(whatAbility){
+  this.playAbility = function(whatAbility){
     if(this.abilityTimer>0){
       switch(whatAbility){
       case "boxRoll":
@@ -647,7 +655,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         this.bodyAngle += spikeRollAngle;
         break;
       case "stomp":
-      	if(this.abilityTimer === stompTime){
+        if(this.abilityTimer === stompTime){
           this.legOffsetX = (upperLegBound*this.size)-(stompTime*this.getSpeed());
           this.frontLegUp = true;
           this.legDirX = 1;
@@ -716,7 +724,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         }
         break;
       case "shockwave":
-      	if(this.abilityTimer === shockwaveTime){
+        if(this.abilityTimer === shockwaveTime){
           this.legOffsetX = (upperLegBound*this.size)-(shockwaveTime*this.getSpeed());
           this.frontLegUp = true;
           this.legDirX = 1;
@@ -749,12 +757,12 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           // cracks.push(crack);
           // socket.emit("crackInitPack", {crackInitPack: crack.getInitPack()});
         }
-      	break;
+        break;
       case "dash":
-      	//do nothing, only increases speed
+        //do nothing, only increases speed
         break;
       case "charge":
-      	//do nothing, only increases speed
+        //do nothing, only increases speed
         break;
       case "hide":
         //heal in hide
@@ -765,10 +773,10 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       }
       this.abilityTimer -= 1;
     }
-		if(this.abilityTimer <= 0){
-			this.doingAbility = false;
-		}
-	}
+    if(this.abilityTimer <= 0){
+      this.doingAbility = false;
+    }
+  }
   
   
   this.die = function(){
@@ -804,26 +812,26 @@ var Player = function(id, name, x, y, XP, isDeveloper){
     this.shellType = "Box";
   }
   
-	this.animateLegs = function(){
-		this.legOffsetX+=this.getSpeed()*this.legDirX;
-		if(this.walkSpeed*this.doMovement === 0){
-			this.legOffsetX = 0;
-			this.legOffsetY = 0;
-			this.legDirX = 1;
-			this.frontLegUp = true;
-		}
-		if(this.legOffsetX>upperLegBound*this.size){
-			this.legOffsetX=(upperLegBound*this.size);
-			this.legDirX = -1;
-			this.frontLegUp = !this.frontLegUp;
-		}else if(this.legOffsetX<lowerLegBound*this.size){
-			this.legOffsetX=(lowerLegBound*this.size);
-			this.legDirX = 1;
-			this.frontLegUp = !this.frontLegUp;
-		}
+  this.animateLegs = function(){
+    this.legOffsetX+=this.getSpeed()*this.legDirX;
+    if(this.walkSpeed*this.doMovement === 0){
+      this.legOffsetX = 0;
+      this.legOffsetY = 0;
+      this.legDirX = 1;
+      this.frontLegUp = true;
+    }
+    if(this.legOffsetX>upperLegBound*this.size){
+      this.legOffsetX=(upperLegBound*this.size);
+      this.legDirX = -1;
+      this.frontLegUp = !this.frontLegUp;
+    }else if(this.legOffsetX<lowerLegBound*this.size){
+      this.legOffsetX=(lowerLegBound*this.size);
+      this.legDirX = 1;
+      this.frontLegUp = !this.frontLegUp;
+    }
   }
 
-	this.update = function(){
+  this.update = function(){
     
     for(let i in this.cooldownSet){
       if(this.cooldownSet[i] != 0 && !(this.doingAbility)){
@@ -849,15 +857,15 @@ var Player = function(id, name, x, y, XP, isDeveloper){
     }
     
     
-		if(this.distXToMouse<this.size*detectionRange){
-			this.doMovement = false;
-		} else{
-			this.doMovement = true;
-		}
+    if(this.distXToMouse<this.size*detectionRange){
+      this.doMovement = false;
+    } else{
+      this.doMovement = true;
+    }
     
     if(this.doingAbility){
-			this.playAbility(this.whatAbility);
-		}
+      this.playAbility(this.whatAbility);
+    }
     
     if(!(this.doingAbility && (this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll"  || this.whatAbility === "jumpStomp"))){
       this.handlePlantXP();
@@ -868,17 +876,17 @@ var Player = function(id, name, x, y, XP, isDeveloper){
     
     this.animateLegs();
     
-		if(this.doMovement){
-			if (!(this.isFlipped)) {
-				if(this.x < mapSize){
-					this.x += this.getSpeed();
-				}
-			} else{
-				if(this.x > 0){
-					this.x -= this.getSpeed();
-				}
-			}
-		}
+    if(this.doMovement){
+      if (!(this.isFlipped)) {
+        if(this.x < mapSize){
+          this.x += this.getSpeed();
+        }
+      } else{
+        if(this.x > 0){
+          this.x -= this.getSpeed();
+        }
+      }
+    }
     if(this.progressXP>this.targetXP){
       if(this.abilitySet.length===maxAbilityCards){
         if(this.upgrade === 3){ //you are not adding a card on upgrade 3, you are upgrading one. so allowed
@@ -888,20 +896,20 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         this.doUpgrade(this.upgrade);
       }
     }
-	}
+  }
 
-	this.getInitPack = function () { //base information that can be updated
-		return {
-			id: this.id,
-			name: this.name,
-			x: this.x,
-			y: this.y,
-			size: this.size,
+  this.getInitPack = function () { //base information that can be updated
+    return {
+      id: this.id,
+      name: this.name,
+      x: this.x,
+      y: this.y,
+      size: this.size,
       isDeveloper: this.isDeveloper,
-		}
-	}
+    }
+  }
 
-	this.getUpdatePack = function () {
+  this.getUpdatePack = function () {
     return {
       id: this.id,
       x: this.x,
@@ -930,7 +938,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
     }
   }
     
-	return this;
+  return this;
 }
 
 function getAllPlayersInitPack() {
@@ -1048,86 +1056,105 @@ function getAllBotsInitPack() {
     return botInitPack;
 }
 
-var Plant = function(id, x, height, hasFlower, hasLeaf){
-	this.id = id;
-	this.x = x;
-	this.height = height;
-	this.hasFlower = true;
-	this.flower = new Flower(x, -height);
-	this.hasLeaf = [];
-	this.leaves = [];
-	var numLeaves = (height-(height%75))/75;
-	var doLeafFlip;
-	if(this.id%2 == 1){
-		doLeafFlip = false;
-	} else{
-		doLeafFlip = true;
-	}
-	for(let i = 0; i<numLeaves; i++){
-		if(!(doLeafFlip)){
-			this.leaves[i]=new Leaf(x+50, -((i+0.5)*75), doLeafFlip);
-		} else{
-			this.leaves[i]=new Leaf(x-50, -((i+0.5)*75), doLeafFlip);
-		}
-		this.hasLeaf[i] = true;
-		doLeafFlip = !doLeafFlip;
-	}
+var Grass = function(id, x, size){
+  this.id = id
+  this.x = x
+  this.size = size
+  this.getInitPack = function () { //base information that can be updated
+    return {
+      id: this.id,
+      x: this.x,
+      size: this.size, 
+    }
+  }
+  this.getUpdatePack = function () {
+    return {
+      id:this.id,
+    }
+  }
+  return this;
 
-	this.getInitPack = function () { //base information that can be updated
-		return {
-			id: this.id,
-			x: this.x,
-			height: this.height,
-			hasFlower: this.hasFlower,
-			hasLeaf: this.hasLeaf,
-		}
-	}
-	this.getUpdatePack = function () {
-		return {
-			id: this.id,
-			hasFlower: this.hasFlower,
-			hasLeaf: this.hasLeaf,
-      // leaves: this.leaves,
-		}
-	}
-	return this;
+}
+
+var Plant = function(id, x, height, hasFlower, hasLeaf){
+  this.id = id;
+  this.x = x;
+  this.height = height;
+  this.hasFlower = true;
+  this.flower = new Flower(x, -height);
+  this.hasLeaf = [];
+  this.leaves = [];
+  var numLeaves = (height-(height%75))/75;
+  var doLeafFlip;
+  if(this.id%2 == 1){
+    doLeafFlip = false;
+  } else{
+    doLeafFlip = true;
+  }
+  for(let i = 0; i<numLeaves; i++){
+    if(!(doLeafFlip)){
+      this.leaves[i]=new Leaf(x+50, -((i+0.5)*75), doLeafFlip);
+    } else{
+      this.leaves[i]=new Leaf(x-50, -((i+0.5)*75), doLeafFlip);
+    }
+    this.hasLeaf[i] = true;
+    doLeafFlip = !doLeafFlip;
+  }
+
+  this.getInitPack = function () { //base information that can be updated
+    return {
+      id: this.id,
+      x: this.x,
+      height: this.height,
+      hasFlower: this.hasFlower,
+      hasLeaf: this.hasLeaf,
+    }
+  }
+  this.getUpdatePack = function () {
+    return {
+      id: this.id,
+      hasFlower: this.hasFlower,
+      hasLeaf: this.hasLeaf,
+    }
+  }
+  return this;
 }
 
 var Flower = function(x,y){
-	this.x = x;
-	this.y = y;
-	this.XP = 25+Math.random()*5;
-	this.size = 150;
-	return this;
+  this.x = x;
+  this.y = y;
+  this.XP = 25+Math.random()*5;
+  this.size = 150;
+  return this;
 }
 
 var Leaf = function(x, y, isFlipped){
-	this.x = x;
-	this.y = y;
-	this.isFlipped = isFlipped;
-	this.XP = 3+Math.random()*2;
-	this.size = 100;
-	return this;
+  this.x = x;
+  this.y = y;
+  this.isFlipped = isFlipped;
+  this.XP = 3+Math.random()*2;
+  this.size = 100;
+  return this;
 }
 
 var Crack = function(x, y, size, isFlipped){
   this.x = x;
-	this.y = y;
+  this.y = y;
   this.size = size;
-	this.isFlipped = isFlipped;
+  this.isFlipped = isFlipped;
   
   this.update = function(){
     ;
   }
   
   this.getInitPack = function () { //base information that can be updated
-		return {
-			x: this.x,
-			y: this.y,
-			size: this.size,
-			isFlipped: this.isFlipped,
-		}
-	}
+    return {
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      isFlipped: this.isFlipped,
+    }
+  }
   
   return this;
 }
@@ -1138,6 +1165,14 @@ function getAllCracksInitPack() {
         crackInitPack.push(cracks[i].getInitPack());
     }
     return crackInitPack;
+}
+
+function getAllGrassInitPack() {
+    var grassInitPack = [];
+    for(let i in grass) {
+        grassInitPack.push(grass[i].getInitPack());
+    }
+    return grassInitPack;
 }
 
 function getAllPlantsInitPack() {
