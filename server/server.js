@@ -1,4 +1,4 @@
-3var path = require("path");
+var path = require("path");
 var http = require("http");
 var express = require("express");
 var socketIO = require("socket.io");
@@ -25,8 +25,8 @@ var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 
 server.listen(port, function(){//when the server starts, generate the map with this function
 	var plant = {};
-	for(let i = 0; i< (mapSize/100); i++){
-		plant = new Plant(i, Math.random()*mapSize, (Math.random()*250)+250, true, true);
+	for(let i = 0; i< (mapSize/300); i++){
+		plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+250, true, true);
 		plants.push(plant);
 	}
   var bot = {};
@@ -40,7 +40,9 @@ server.listen(port, function(){//when the server starts, generate the map with t
 io.on('connection', function(socket) {
     console.log('someone connected, Id: ' + socket.id);
     var player = {};
-    
+  
+  
+    //not for beta dev version  
     socket.on("loadedPage", (data) =>{
       socket.emit("initPack", {initPack: getAllPlayersInitPack()});
       socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
@@ -63,7 +65,7 @@ io.on('connection', function(socket) {
 			    playerDeveloper = false
         }
         player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 5, playerDeveloper);
-      
+    
         players.push(player);
 
         socket.emit("yourId", {id: player.id});
@@ -83,81 +85,81 @@ io.on('connection', function(socket) {
         player.windowWidth = data.windowWidth;
         player.windowHeight = data.windowHeight;
     })
-  
+
     socket.on("chatMessage", (data) => {
       var thisMessagePack = {}
       thisMessagePack.message = data.chatMessage
       thisMessagePack.id = player.id
-	  if(player.isDeveloper){
-		  switch(data.chatMessage){
-			  case "/resetall":
-			  for(let i in players){
-				  players[i].reset()
-			  }
-			  break
-        case "/reset":
-				player.reset()
-			  break
-			  case "/sizeall 3":
-			  for(let i in players){
-				  players[i].XP = Math.random()*300+3000
-          players[i].progressXP = Math.random()*300+3000
-			  }
-			  break
-			  case "/sizeall 2":
-			  for(let i in players){
-				  players[i].XP = Math.random()*300+1500
-          players[i].progressXP = Math.random()*300+1500
-			  }
-			  break
-			  case "/sizeall 1":
-			  for(let i in players){
-				  players[i].XP = Math.random()*300+0
-          players[i].progressXP = Math.random()*300+0
-			  }
-			  break
-			  case "/size 3":
-			  player.XP = Math.random()*300+3000
-        player.progressXP = Math.random()*300+3000
-			  break
-			  case "/size 2":
-			  player.XP = Math.random()*300+1500
-        player.progressXP = Math.random()*300+1500
-			  break
-			  case "/size 1":
-			  player.XP = Math.random()*300+0
-        player.progressXP = Math.random()*300+0
-			  break
-        
-        case "/speedall 3":
-			  for(let i in players){
-				  players[i].walkSpeed = 6
-			  }
-			  break
-			  case "/speedall 2":
-			  for(let i in players){
-				   players[i].walkSpeed = 3
-			  }
-			  break
-			  case "/speedall 1":
-			  for(let i in players){
-				   players[i].walkSpeed = 1.5
-			  }
-			  break
-			  case "/speed 3":
-			  player.walkSpeed = 6
-			  break
-			  case "/speed 2":
-			  player.walkSpeed = 3
-			  break
-			  case "/speed 1":
-			  player.walkSpeed = 1.5
-			  break
-        
-			  default:
-			  break
-		  }
-	  }
+  	  if(player.isDeveloper){
+  		  switch(data.chatMessage){
+  			  case "/resetall":
+  			  for(let i in players){
+  				  players[i].reset()
+  			  }
+  			  break
+          case "/reset":
+  				player.reset()
+  			  break
+  			  case "/sizeall 3":
+  			  for(let i in players){
+  				  players[i].XP = Math.random()*300+3000
+            players[i].progressXP = Math.random()*300+3000
+  			  }
+  			  break
+  			  case "/sizeall 2":
+  			  for(let i in players){
+  				  players[i].XP = Math.random()*300+1500
+            players[i].progressXP = Math.random()*300+1500
+  			  }
+  			  break
+  			  case "/sizeall 1":
+  			  for(let i in players){
+  				  players[i].XP = Math.random()*300+0
+            players[i].progressXP = Math.random()*300+0
+  			  }
+  			  break
+  			  case "/size 3":
+  			  player.XP = Math.random()*300+3000
+          player.progressXP = Math.random()*300+3000
+  			  break
+  			  case "/size 2":
+  			  player.XP = Math.random()*300+1500
+          player.progressXP = Math.random()*300+1500
+  			  break
+  			  case "/size 1":
+  			  player.XP = Math.random()*300+0
+          player.progressXP = Math.random()*300+0
+  			  break
+          
+          case "/speedall 3":
+  			  for(let i in players){
+  				  players[i].walkSpeed = 6
+  			  }
+  			  break
+  			  case "/speedall 2":
+  			  for(let i in players){
+  				   players[i].walkSpeed = 3
+  			  }
+  			  break
+  			  case "/speedall 1":
+  			  for(let i in players){
+  				   players[i].walkSpeed = 1.5
+  			  }
+  			  break
+  			  case "/speed 3":
+  			  player.walkSpeed = 6
+  			  break
+  			  case "/speed 2":
+  			  player.walkSpeed = 3
+  			  break
+  			  case "/speed 1":
+  			  player.walkSpeed = 1.5
+  			  break
+          
+  			  default:
+  			  break
+  		  }
+  	  }
       socket.broadcast.emit("getChat", {messagePack: thisMessagePack}); //send to everyone else
       socket.emit("getChat", {messagePack: thisMessagePack}); //send back to sender
     })
@@ -174,55 +176,55 @@ io.on('connection', function(socket) {
     // })
 
     socket.on("usedAbility", (data) =>{
-      if(player.cooldownSet[data.whatAbility] === 0 && !(player.doingAbility && player.whatAbility === "JumpStomp")){ //you cannot interupt JumpStomp
+      if(player.cooldownSet[data.whatAbility] === 0 && !(player.doingAbility && player.whatAbility === "jumpStomp")){ //you cannot interupt jumpStomp
         switch(player.abilitySet[data.whatAbility]){
-        case "BoxRoll":
-          player.abilityTimer = BoxRollTime;
-          player.cooldownLength[data.whatAbility] = BoxRollCooldown;
-          player.cooldownSet[data.whatAbility] = BoxRollCooldown;
+        case "boxRoll":
+          player.abilityTimer = boxRollTime;
+          player.cooldownLength[data.whatAbility] = boxRollCooldown; //these two are in arrays so that we can display icons
+          player.cooldownSet[data.whatAbility] = boxRollCooldown;
           player.shellType = "Box";
           break;
-        case "DomeRoll":
-          player.abilityTimer = DomeRollTime;
-          player.cooldownLength[data.whatAbility] = DomeRollCooldown;
-          player.cooldownSet[data.whatAbility] = DomeRollCooldown;
+        case "domeRoll":
+          player.abilityTimer = domeRollTime;
+          player.cooldownLength[data.whatAbility] = domeRollCooldown;
+          player.cooldownSet[data.whatAbility] = domeRollCooldown;
           player.shellType = "Dome";
           break;
-        case "SpikeRoll":
-          player.abilityTimer = SpikeRollTime;
-          player.cooldownLength[data.whatAbility] = SpikeRollCooldown;
-          player.cooldownSet[data.whatAbility] = SpikeRollCooldown;
+        case "spikeRoll":
+          player.abilityTimer = spikeRollTime;
+          player.cooldownLength[data.whatAbility] = spikeRollCooldown;
+          player.cooldownSet[data.whatAbility] = spikeRollCooldown;
           player.shellType = "Spike";
           break;
-        case "Hide":
-          player.abilityTimer = HideTime;
-          player.cooldownLength[data.whatAbility] = HideCooldown;
-          player.cooldownSet[data.whatAbility] = HideCooldown;
+        case "hide":
+          player.abilityTimer = hideTime;
+          player.cooldownLength[data.whatAbility] = hideCooldown;
+          player.cooldownSet[data.whatAbility] = hideCooldown;
           break;
-        case "Stomp":
-          player.abilityTimer = StompTime;
-          player.cooldownLength[data.whatAbility] = StompCooldown;
-          player.cooldownSet[data.whatAbility] = StompCooldown;
+        case "stomp":
+          player.abilityTimer = stompTime;
+          player.cooldownLength[data.whatAbility] = stompCooldown;
+          player.cooldownSet[data.whatAbility] = stompCooldown;
           break;
-        case "JumpStomp":
-          player.abilityTimer = JumpStompTime;
-          player.cooldownLength[data.whatAbility] = JumpStompCooldown;
-          player.cooldownSet[data.whatAbility] = JumpStompCooldown;
+        case "jumpStomp":
+          player.abilityTimer = jumpStompTime;
+          player.cooldownLength[data.whatAbility] = jumpStompCooldown;
+          player.cooldownSet[data.whatAbility] = jumpStompCooldown;
           break;
-        case "Shockwave":
-          player.abilityTimer = ShockwaveTime;
-          player.cooldownLength[data.whatAbility] = ShockwaveCooldown;
-          player.cooldownSet[data.whatAbility] = ShockwaveCooldown;
+        case "shockwave":
+          player.abilityTimer = shockwaveTime;
+          player.cooldownLength[data.whatAbility] = shockwaveCooldown;
+          player.cooldownSet[data.whatAbility] = shockwaveCooldown;
           break;
-        case "Dash":
-          player.abilityTimer = DashTime;
-          player.cooldownLength[data.whatAbility] = DashCooldown;
-          player.cooldownSet[data.whatAbility] = DashCooldown;
+        case "dash":
+          player.abilityTimer = dashTime;
+          player.cooldownLength[data.whatAbility] = dashCooldown;
+          player.cooldownSet[data.whatAbility] = dashCooldown;
           break;
-        case "Charge":
-          player.abilityTimer = ChargeTime;
-          player.cooldownLength[data.whatAbility] = ChargeCooldown;
-          player.cooldownSet[data.whatAbility] = ChargeCooldown;
+        case "charge":
+          player.abilityTimer = chargeTime;
+          player.cooldownLength[data.whatAbility] = chargeCooldown;
+          player.cooldownSet[data.whatAbility] = chargeCooldown;
           break;
         default:
           console.log("Ability doesnt exist");
@@ -238,6 +240,11 @@ io.on('connection', function(socket) {
       }
         
     })
+
+    // socket.on("doboost", (data) =>{
+    //   player.abilityTimer = boostTime
+
+    // })
 
     socket.on("choseCard", (data) =>{
       player.abilityCardsActive = false;
@@ -276,7 +283,7 @@ io.on('connection', function(socket) {
       }
       
       player.doingAbility = true;
-      player.whatAbility = "Dash";
+      player.whatAbility = "dash";
       player.abilityTimer = 15;
       
     })
@@ -285,14 +292,7 @@ io.on('connection', function(socket) {
         io.emit('someoneLeft', {id: socket.id});
 
         players = players.filter((element) => element.id !== socket.id);
-        if(players.length === 0){
-          plants = [];
-          var plant = {};
-          for(let i = 0; i< (mapSize/100); i++){
-            plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+200, true, true);
-            plants.push(plant);
-          }
-        }
+        
     });
 
 })
@@ -303,36 +303,40 @@ var lowerLegBound = -0.075;
 
 var detectionRange = 0.25
 
-var BoxRollTime = 40;
-var DomeRollTime = 40;
-var SpikeRollTime = 10;
-var HideTime = 120;
-var StompTime = 5;
-var JumpStompTime = 100000; //max ticks turtle can be in air for
-var ShockwaveTime = 20;
-var DashTime = 30;
-var ChargeTime = 20;
+var boxRollTime = 40;
+var domeRollTime = 40;
+var spikeRollTime = 10;
+var hideTime = 120;
+var stompTime = 5;
+var jumpStompTime = 100000; //max ticks turtle can be in air for
+var shockwaveTime = 20;
+var dashTime = 30;
+var chargeTime = 30;
 
-var BoxRollCooldown = 250;
-var DomeRollCooldown = 500;
-var SpikeRollCooldown = 280;
-var HideCooldown = 400;
-var StompCooldown = 200;
-var JumpStompCooldown = 300;
-var ShockwaveCooldown = 250;
-var DashCooldown = 250;
-var ChargeCooldown = 300;
+var boostTime = 10;
 
-var BoxRollAngle = (3.14159*1)/BoxRollTime;
-var DomeRollAngle = (3.14159*2)/DomeRollTime;
-var SpikeRollAngle = (3.14159/2)/SpikeRollTime;
+var boxRollCooldown = 250;
+var domeRollCooldown = 500;
+var spikeRollCooldown = 280;
+var hideCooldown = 400;
+var stompCooldown = 200;
+var jumpStompCooldown = 300;
+var shockwaveCooldown = 250;
+var dashCooldown = 200;
+var chargeCooldown = 250;
+
+var boostCooldown = 300;
+
+var boxRollAngle = (3.14159*1)/boxRollTime;
+var domeRollAngle = (3.14159*2)/domeRollTime;
+var spikeRollAngle = (3.14159/2)/spikeRollTime;
 
 var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
 var Player = function(id, name, x, y, XP, isDeveloper){
   
   this.getSize = function(){
-    var modifier = 3000;
+    var modifier = 4000;
     var startingSize = 120;
     var maxSize = 1000;
     return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
@@ -388,29 +392,29 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 	this.getSpeed = function(){
 		if(this.doingAbility){
 			switch(this.whatAbility){
-			case "BoxRoll":
-				return (BoxRollAngle)*this.size;
+			case "boxRoll":
+				return (boxRollAngle)*this.size;
         break;
-			case "DomeRoll":
-				return (DomeRollAngle)*this.size;
+			case "domeRoll":
+				return (domeRollAngle)*this.size;
         break;
-			case "SpikeRoll":
-				return (SpikeRollAngle)*this.size;
+			case "spikeRoll":
+				return (spikeRollAngle)*this.size;
         break;
-      case "Stomp":
+      case "stomp":
 				return this.walkSpeed/2;
         break;
-      case "JumpStomp":
+      case "jumpStomp":
 				return this.walkSpeed*20;
         break;
-      case "Shockwave":
+      case "shockwave":
 				return this.walkSpeed/2;
         break;
-      case "Dash":
+      case "dash":
         return this.walkSpeed*5;
-      case "Charge":
+      case "charge":
         return this.walkSpeed*10;
-      case "Hide":
+      case "hide":
         return 0;
         break;
 			default: //if not specified, assume regular movement
@@ -427,23 +431,23 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			switch(upgrade){
 			case 1:
 				this.abilityCardsActive = true;
-				this.abilityCards = ["Hide"];
+				this.abilityCards = ["hide"];
 				break;
 			case 2:
 				this.abilityCardsActive = true;
-				this.abilityCards = ["BoxRoll", "Stomp", "Dash"];
+				this.abilityCards = ["boxRoll", "stomp", "dash"];
         break;
 			case 3:
 				this.abilityCardsActive = true;
 				switch(this.abilitySet[this.abilitySet.length-1]){
-				case "BoxRoll":
-					this.abilityCards = ["DomeRoll", "SpikeRoll"];
+				case "boxRoll":
+					this.abilityCards = ["domeRoll", "spikeRoll"];
 					break;
-				case "Stomp":
-					this.abilityCards = ["JumpStomp", "Shockwave"];
+				case "stomp":
+					this.abilityCards = ["jumpStomp", "shockwave"];
 					break;
-        case "Dash":
-          this.abilityCards = ["Charge"];
+        case "dash":
+          this.abilityCards = ["charge"];
 					break;
 				default:
 					console.log("ability cannot be upgraded");
@@ -468,12 +472,12 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       var hitTopSide = bots[b].y-bots[b].size/4>this.y-this.size/4-this.size*0.75 && bots[b].y-bots[b].size/4-bots[b].size*0.75<this.y-this.size/4-this.size*0.75
       var hitBottomSide = this.y-this.size/4>bots[b].y-bots[b].size/4-bots[b].size*0.75 && this.y-this.size/4-this.size*0.75<bots[b].y-bots[b].size/4-bots[b].size*0.75
   
-      if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp")){
+      if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp")){
         this.jumpDelta = this.jumpForce
         this.abilityTime = 10000
       }
       if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
-        if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp"))){
+        if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp"))){
           bots[b].HP-= this.size/5;
         }
         if(hitLeftSide){
@@ -522,11 +526,11 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 				var hitTopSide = players[t].y-players[t].size/4>this.y-this.size/4-this.size*0.75 && players[t].y-players[t].size/4-players[t].size*0.75<this.y-this.size/4-this.size*0.75
         var hitBottomSide = this.y-this.size/4>players[t].y-players[t].size/4-players[t].size*0.75 && this.y-this.size/4-this.size*0.75<players[t].y-players[t].size/4-players[t].size*0.75
       
-        if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp")){
+        if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp")){
           this.jumpDelta = this.jumpForce
           this.abilityTime = 10000
         }
-        if(hitTopSide && (hitLeftSide || hitRightSide) && (players[t].doingAbility && players[t].whatAbility === "JumpStomp")){
+        if(hitTopSide && (hitLeftSide || hitRightSide) && (players[t].doingAbility && players[t].whatAbility === "jumpStomp")){
           players[t].jumpDelta = players[t].jumpForce
         }
         if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
@@ -555,10 +559,10 @@ var Player = function(id, name, x, y, XP, isDeveloper){
             this.bumpForce = -5
             players[t].bumpForce = 5
           }
-          if(!((this.doingAbility && this.whatAbility == "Hide") || (players[t].doingAbility && players[t].whatAbility == "Hide"))){
+          if(!((this.doingAbility && this.whatAbility == "hide") || (players[t].doingAbility && players[t].whatAbility == "hide"))){
             //we need to check everything for both players as the one first in the array will check first
-            if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "JumpStomp")) &&
-              !(hitTopSide && (hitLeftSide || hitRightSide) && (players[t].doingAbility && players[t].whatAbility === "JumpStomp"))){
+            if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp")) &&
+              !(hitTopSide && (hitLeftSide || hitRightSide) && (players[t].doingAbility && players[t].whatAbility === "jumpStomp"))){
               if((this.isFlipped && players[t].isFlipped && hitLeftSide) || (this.isFlipped && !players[t].isFlipped && hitLeftSide) ||
                 (!this.isFlipped && players[t].isFlipped && hitRightSide) || (!this.isFlipped && !players[t].isFlipped && hitRightSide)){
                 players[t].HP-= this.size/5;
@@ -633,18 +637,18 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 	this.playAbility = function(whatAbility){
     if(this.abilityTimer>0){
       switch(whatAbility){
-      case "BoxRoll":
-        this.bodyAngle += BoxRollAngle;
+      case "boxRoll":
+        this.bodyAngle += boxRollAngle;
         break;
-      case "DomeRoll":
-        this.bodyAngle += DomeRollAngle;
+      case "domeRoll":
+        this.bodyAngle += domeRollAngle;
         break;
-      case "SpikeRoll":
-        this.bodyAngle += SpikeRollAngle;
+      case "spikeRoll":
+        this.bodyAngle += spikeRollAngle;
         break;
-      case "Stomp":
-      	if(this.abilityTimer === StompTime){
-          this.legOffsetX = (upperLegBound*this.size)-(StompTime*this.getSpeed());
+      case "stomp":
+      	if(this.abilityTimer === stompTime){
+          this.legOffsetX = (upperLegBound*this.size)-(stompTime*this.getSpeed());
           this.frontLegUp = true;
           this.legDirX = 1;
         } else if(this.abilityTimer === 1){
@@ -677,7 +681,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           // socket.emit("crackInitPack", {crackInitPack: crack.getInitPack()});
         }
         break;
-      case "JumpStomp":
+      case "jumpStomp":
         this.y -= this.jumpDelta;
         this.jumpDelta -= this.gravity;
         if(this.y>0){
@@ -711,9 +715,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           // socket.emit("crackInitPack", {crackInitPack: crack.getInitPack()});
         }
         break;
-      case "Shockwave":
-      	if(this.abilityTimer === ShockwaveTime){
-          this.legOffsetX = (upperLegBound*this.size)-(ShockwaveTime*this.getSpeed());
+      case "shockwave":
+      	if(this.abilityTimer === shockwaveTime){
+          this.legOffsetX = (upperLegBound*this.size)-(shockwaveTime*this.getSpeed());
           this.frontLegUp = true;
           this.legDirX = 1;
         } else if(this.abilityTimer === 1){
@@ -746,13 +750,13 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           // socket.emit("crackInitPack", {crackInitPack: crack.getInitPack()});
         }
       	break;
-      case "Dash":
+      case "dash":
       	//do nothing, only increases speed
         break;
-      case "Charge":
+      case "charge":
       	//do nothing, only increases speed
         break;
-      case "Hide":
+      case "hide":
         //heal in hide
         this.HP+= this.maxHP/600
         break;
@@ -855,7 +859,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			this.playAbility(this.whatAbility);
 		}
     
-    if(!(this.doingAbility && (this.whatAbility === "BoxRoll" || this.whatAbility === "DomeRoll" || this.whatAbility === "SpikeRoll"  || this.whatAbility === "JumpStomp"))){
+    if(!(this.doingAbility && (this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll"  || this.whatAbility === "jumpStomp"))){
       this.handlePlantXP();
     }
     if(1){
