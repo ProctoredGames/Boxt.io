@@ -249,10 +249,22 @@ io.on('connection', function(socket) {
         
     })
 
-    // socket.on("doboost", (data) =>{
-    //   player.abilityTimer = boostTime
+    socket.on("doBoost", (data) =>{
+      if(player.boostCooldown == 0){
+        player.abilityTimer = boostTime
+        player.whatAbility = "boost"
+        player.doingAbility = true;
+        player.boostCooldown = boostCooldown
+      }
+      
+      // var thisMessagePack = {}
+      // thisMessagePack.message = "BOOSTEDDD"
+      // thisMessagePack.id = player.id
+      // socket.broadcast.emit("getChat", {messagePack: thisMessagePack}); //send to everyone else
+      // socket.emit("getChat", {messagePack: thisMessagePack}); //send back to sender
+      
 
-    // })
+    })
 
     socket.on("choseCard", (data) =>{
       player.abilityCardsActive = false;
@@ -322,6 +334,7 @@ var dashTime = 30;
 var chargeTime = 30;
 
 var boostTime = 10;
+var boostCooldown = 30;
 
 var boxRollCooldown = 250;
 var domeRollCooldown = 500;
@@ -333,7 +346,6 @@ var shockwaveCooldown = 250;
 var dashCooldown = 200;
 var chargeCooldown = 250;
 
-var boostCooldown = 300;
 
 var boxRollAngle = (3.14159*1)/boxRollTime;
 var domeRollAngle = (3.14159*2)/domeRollTime;
@@ -363,6 +375,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   this.whatAbility;
   this.abilitySet = [];
   this.cooldownLength = []; //total cooldown
+  this.boostCooldown = 0;
   this.cooldownSet = []; //cooldown left
   this.bodyAngle = 0;
 
@@ -418,6 +431,8 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       case "shockwave":
         return this.walkSpeed/2;
         break;
+      case "boost":
+        return this.walkSpeed*5;
       case "dash":
         return this.walkSpeed*5;
       case "charge":
@@ -485,6 +500,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         this.abilityTime = 10000
       }
       if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
+        if(this.doingAbility && (this.whatAbility == "boxRoll"|| this.whatAbility == "spikeRoll")){
+          this.doingAbility = false
+        }
         if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp"))){
           bots[b].HP-= this.size/5;
         }
@@ -542,6 +560,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           players[t].jumpDelta = players[t].jumpForce
         }
         if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
+          if(this.doingAbility && (this.whatAbility == "boxRoll"||this.whatAbility == "domeRoll" || this.whatAbility == "spikeRoll")){
+            this.doingAbility = false
+          }
           if(hitLeftSide){
             if(this.size>players[t].size){
               if(players[t].x > 0){
@@ -758,6 +779,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           // socket.emit("crackInitPack", {crackInitPack: crack.getInitPack()});
         }
         break;
+      case "boost":
+        //do nothing, only increases speed
+        break;
       case "dash":
         //do nothing, only increases speed
         break;
@@ -837,6 +861,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       if(this.cooldownSet[i] != 0 && !(this.doingAbility)){
         this.cooldownSet[i] -= 1;
       }
+    }
+    if(this.boostCooldown != 0 && !(this.doingAbility && this.whatAbility == "boost")){
+      this.boostCooldown -=1;
     }
     
     var ratio = this.size/this.maxHP;
