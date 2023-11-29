@@ -15,6 +15,6 @@
   "scripts": {
     "start": "node server/server.js"
   },
-  "author": "",
+  "author": "Proctored Games",
   "license": "ISC"
 }

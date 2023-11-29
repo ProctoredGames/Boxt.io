@@ -11,6 +11,8 @@ var server = http.createServer(app);
 let io = socketIO(server);
 app.use(express.static(publicPath));
 
+var chatLog = [];
+
 var players = [];
 var grass = [];
 var plants = [];
@@ -95,6 +97,9 @@ io.on('connection', function(socket) {
     })
 
     socket.on("chatMessage", (data) => {
+      // var messageEntry = player.name + "("+ player.id + ")" + " - " + data.chatMessage
+      // chatLog.push(messageEntry)
+      // console.log(messageEntry)
       var thisMessagePack = {}
       thisMessagePack.message = data.chatMessage
       thisMessagePack.id = player.id
@@ -302,10 +307,6 @@ io.on('connection', function(socket) {
         break;
       }
       
-      player.doingAbility = true;
-      player.whatAbility = "dash";
-      player.abilityTimer = 15;
-      
     })
 
     socket.on("disconnect", () => {
@@ -500,7 +501,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         this.abilityTime = 10000
       }
       if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
-        if(this.doingAbility && (this.whatAbility == "boxRoll"|| this.whatAbility == "spikeRoll")){
+        if(this.doingAbility && (this.whatAbility == "boxRoll"|| this.whatAbility == "domeRoll")){
           this.doingAbility = false
         }
         if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp"))){
@@ -560,8 +561,11 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           players[t].jumpDelta = players[t].jumpForce
         }
         if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
-          if(this.doingAbility && (this.whatAbility == "boxRoll"||this.whatAbility == "domeRoll" || this.whatAbility == "spikeRoll")){
+          if(this.doingAbility && (this.whatAbility == "boxRoll" || this.whatAbility == "domeRoll")){
             this.doingAbility = false
+          }
+          if(players[t].doingAbility && (players[t].whatAbility == "boxRoll" || players[t].whatAbility == "domeRoll")){
+            players[t].doingAbility = false
           }
           if(hitLeftSide){
             if(this.size>players[t].size){
