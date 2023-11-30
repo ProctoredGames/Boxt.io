@@ -29,12 +29,12 @@ var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 server.listen(port, function(){//when the server starts, generate the map with this function
   var plant = {};
   for(let i = 0; i< (mapSize/250); i++){
-    plant = new Plant(i, Math.random()*mapSize, (Math.random()*300)+250, true, true);
+    plant = new Plant(i, Math.random()*mapSize, 250+(Math.random()*300), true, true);
     plants.push(plant);
   }
   var patch = {};
-  for(let i = 0; i< (mapSize/400); i++){
-    patch = new Grass(i, Math.random()*mapSize, (Math.random()*250)+150);
+  for(let i = 0; i< (mapSize/1000); i++){
+    patch = new Grass(i, Math.random()*mapSize, 250+(Math.random()*100));
     grass.push(patch);
   }
   var bot = {};
@@ -67,9 +67,9 @@ io.on('connection', function(socket) {
         }else if(data.name === "?TUMASAKIII!"){
           playerDeveloper = true
           data.name = "Tumasakiii - MOD"
-        }else if(data.name === "?HOURMC++!"){
+        }else if(data.name === "?iAmBigFan!"){
           playerDeveloper = true
-          data.name = "HourMC - DEV"
+          data.name = "DreamAlt - DEV"
         } else{
           playerDeveloper = false
         }
@@ -335,7 +335,7 @@ var dashTime = 30;
 var chargeTime = 30;
 
 var boostTime = 10;
-var boostCooldown = 30;
+var boostCooldown = 35;
 
 var boxRollCooldown = 250;
 var domeRollCooldown = 500;
@@ -351,6 +351,8 @@ var chargeCooldown = 250;
 var boxRollAngle = (3.14159*1)/boxRollTime;
 var domeRollAngle = (3.14159*2)/domeRollTime;
 var spikeRollAngle = (3.14159/2)/spikeRollTime;
+
+var alwaysMoveList = ["boxRoll", "domeRoll", "spikeRoll", "boost", "dash", "charge"]
 
 var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
@@ -889,7 +891,11 @@ var Player = function(id, name, x, y, XP, isDeveloper){
     
     
     if(this.distXToMouse<this.size*detectionRange){
-      this.doMovement = false;
+      if(!(this.doingAbility && (alwaysMoveList.includes(this.whatAbility)))){
+        this.doMovement = false;
+      } else{
+        this.doMovement = true;
+      }
     } else{
       this.doMovement = true;
     }
