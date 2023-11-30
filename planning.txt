@@ -1,0 +1,20 @@
+
+Add ideas from the discord and from planning
+
+[ ] Need to make grass have hide-behind mechanic
+[X] Need to implement click-to-boost
+[ ] Implement desert
+[ ] Implement jungle
+[X] Nerf roll (hitting things ends roll)
+[ ] Implement ants
+[ ] Generally clean up code and optimise
+[ ] Rewrite collisions into a function that we can use
+[ ] Change bite event to occur when head touches bot/player, versus body
+[ ] Implement dandelions
+
+
+
+
+Tool used to make sketch.js unreadable to hackers (server.js is not accesible with inspect)
+
+https://wtool.dev/tool/js-obfuscator

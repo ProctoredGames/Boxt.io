@@ -97,9 +97,7 @@ io.on('connection', function(socket) {
     })
 
     socket.on("chatMessage", (data) => {
-      // var messageEntry = player.name + "("+ player.id + ")" + " - " + data.chatMessage
-      // chatLog.push(messageEntry)
-      // console.log(messageEntry)
+      
       var thisMessagePack = {}
       thisMessagePack.message = data.chatMessage
       thisMessagePack.id = player.id
