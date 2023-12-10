@@ -16,12 +16,12 @@ var chatLog = [];
 var players = [];
 var grass = [];
 var plants = [];
-var bots = [];
+var ladybugs = [];
 var cracks = [];
 
 var maxAbilityCards = 4; //probably will want to change this
 
-//needs to be changed in BOTH server and client
+//needs to be changed in ladybugH server and client
 var mapSize = 6000;
 
 var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
@@ -37,10 +37,10 @@ server.listen(port, function(){//when the server starts, generate the map with t
     patch = new Grass(i, Math.random()*mapSize, 250+(Math.random()*100));
     grass.push(patch);
   }
-  var bot = {};
+  var ladybug = {};
   for(let i = 0; i<4; i++){
-    bot = new Bot(i, (Math.random()*mapSize), 0, (Math.random()*200));
-    bots.push(bot);
+    ladybug = new Ladybug(i, (Math.random()*mapSize), 0, (Math.random()*200));
+    ladybugs.push(ladybug);
   }
   console.log("Server Started on port "+ port +"!");
 });
@@ -55,7 +55,7 @@ io.on('connection', function(socket) {
       socket.emit("initPack", {initPack: getAllPlayersInitPack()});
       socket.emit("grassInitPack", {grassInitPack: getAllGrassInitPack()});
       socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
-      socket.emit("botInitPack", {botInitPack: getAllBotsInitPack()});
+      socket.emit("ladybugInitPack", {ladybugInitPack: getAllladybugsInitPack()});
       socket.emit("crackInitPack", {crackInitPack: getAllCracksInitPack()});
     })
 
@@ -82,7 +82,7 @@ io.on('connection', function(socket) {
         socket.emit("initPack", {initPack: getAllPlayersInitPack()}); //sends everyone's data to new player
         socket.emit("grassInitPack", {grassInitPack: getAllGrassInitPack()});
         socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
-        socket.emit("botInitPack", {botInitPack: getAllBotsInitPack()});
+        socket.emit("ladybugInitPack", {ladybugInitPack: getAllladybugsInitPack()});
         socket.emit("crackInitPack", {crackInitPack: getAllCracksInitPack()});
     });
 
@@ -354,6 +354,23 @@ var alwaysMoveList = ["boxRoll", "domeRoll", "spikeRoll", "boost", "dash", "char
 
 var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
+function checkCollision(objA_X, objA_Y, objA_Size, objB_X, objB_Y, objB_Size){
+
+  var objAHitBTop = (objA_Y+objA_Size/2)>=(objB_Y-objB_Size/2) && (objA_Y+objA_Size/2)<=(objB_Y+objB_Size/2)
+  var objBHitATop = (objB_Y+objB_Size/2)>=(objA_Y-objA_Size/2) && (objB_Y+objB_Size/2)<=(objA_Y+objA_Size/2)
+
+  var objAHitBLeft = (objA_X+objA_Size/2)>=(objB_X-objB_Size/2) && (objA_X+objA_Size/2)<=(objB_X+objB_Size/2)
+  var objBHitALeft = (objB_X+objB_Size/2)>=(objA_X-objA_Size/2) && (objB_X+objB_Size/2)<=(objA_X+objA_Size/2)
+  
+
+  if((objAHitBLeft ||objBHitALeft) && (objAHitBTop ||objBHitATop)){
+    return true
+  } else{
+    return false
+  }
+    
+}
+
 var Player = function(id, name, x, y, XP, isDeveloper){
   
   this.getSize = function(){
@@ -490,153 +507,112 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   }
   
   this.handleCollisions = function(){
-    for (let b in bots){
-      var hitLeftSide = bots[b].x+bots[b].size/2>this.x-this.size/2 && bots[b].x-bots[b].size/2<this.x-this.size/2
-      var hitRightSide = this.x+this.size/2>bots[b].x-bots[b].size/2 && this.x+this.size/2<bots[b].x+bots[b].size/2 
-      var hitTopSide = bots[b].y-bots[b].size/4>this.y-this.size/4-this.size*0.75 && bots[b].y-bots[b].size/4-bots[b].size*0.75<this.y-this.size/4-this.size*0.75
-      var hitBottomSide = this.y-this.size/4>bots[b].y-bots[b].size/4-bots[b].size*0.75 && this.y-this.size/4-this.size*0.75<bots[b].y-bots[b].size/4-bots[b].size*0.75
-  
-      if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp")){
-        this.jumpDelta = this.jumpForce
-        this.abilityTime = 10000
+    for (let b in ladybugs){
+      var headX
+      var headY
+      var range
+      if(!(this.isFlipped)){
+        headX = this.x+this.size*0.65
+      } else{
+        headX = this.x-this.size*0.65
       }
-      if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
-        if(this.doingAbility && (this.whatAbility == "boxRoll"|| this.whatAbility == "domeRoll")){
-          this.doingAbility = false
+      headY = this.y-this.size/6-this.size*0.1
+      range = this.size*0.2
+
+      var bodyCollisionState = checkCollision(this.x, this.y-this.size/2-this.size/6, this.size, ladybugs[b].x, ladybugs[b].y-ladybugs[b].size/2-ladybugs[b].size/6, ladybugs[b].size)
+      var headBodyCollisionState = checkCollision(headX,headY,range,ladybugs[b].x,ladybugs[b].y-ladybugs[b].size/2-ladybugs[b].size/6,ladybugs[b].size)
+
+      if(bodyCollisionState || headBodyCollisionState){
+        if(headBodyCollisionState){
+          ladybugs[b].HP -= this.maxHP/5
         }
-        if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp"))){
-          bots[b].HP-= this.size/5;
-        }
-        if(hitLeftSide){
-          if(this.size>bots[b].size){
-            if(bots[b].x > 0){
-              bots[b].x -= this.getSpeed();
-            }
-          } else{
-            if(this.x < mapSize){
-              this.x += (bots[b].walkSpeed+this.getSpeed());
-            } 
-          }
+        if(this.x>ladybugs[b].x){
+          ladybugs[b].isFlipped = true
+          ladybugs[b].bumpForce = -5
           this.bumpForce = 5
-          bots[b].bumpForce = -5
-          bots[b].isFlipped = true
-        }else if(hitRightSide){
-          if(this.size>bots[b].size){
-            if(bots[b].x<mapSize){
-              bots[b].x += this.getSpeed();
-            }
-          } else{
-            if(this.x > 0){
-              this.x -= (bots[b].walkSpeed+this.getSpeed());
-            }
-          }
+        } else{
+          ladybugs[b].isFlipped = false
+          ladybugs[b].bumpForce = 5
           this.bumpForce = -5
-          bots[b].bumpForce = 5
-          bots[b].isFlipped = false
         }
-        
-        if(bots[b].HP<=0){
-          this.XP+=bots[b].XP*0.75;
-          this.progressXP+=bots[b].XP*0.75;
-          this.size = this.getSize();
-          
-          this.HP += (bots[b].maxHP); //for eating the ladybug
-          
-          bots[b].die();
-        }
+      }
+      if(ladybugs[b].HP<=0){
+        this.XP+=ladybugs[b].XP*0.75
+        this.progressXP+=ladybugs[b].XP*0.75
+        this.HP += ladybugs[b].maxHP/2.5
+        ladybugs[b].die()
       }
     }
     for(let t in players){
       if(players[t].id != this.id){
-        var hitLeftSide = players[t].x+players[t].size/2>this.x-this.size/2 && players[t].x-players[t].size/2<this.x-this.size/2
-        var hitRightSide = this.x+this.size/2>players[t].x-players[t].size/2 && this.x+this.size/2<players[t].x+players[t].size/2 
-        var hitTopSide = players[t].y-players[t].size/4>this.y-this.size/4-this.size*0.75 && players[t].y-players[t].size/4-players[t].size*0.75<this.y-this.size/4-this.size*0.75
-        var hitBottomSide = this.y-this.size/4>players[t].y-players[t].size/4-players[t].size*0.75 && this.y-this.size/4-this.size*0.75<players[t].y-players[t].size/4-players[t].size*0.75
-      
-        if(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp")){
-          this.jumpDelta = this.jumpForce
-          this.abilityTime = 10000
+        var headX
+        var headY
+        var range
+        if(!(this.isFlipped)){
+          headX = this.x+this.size*0.65
+        } else{
+          headX = this.x-this.size*0.65
         }
-        if(hitTopSide && (hitLeftSide || hitRightSide) && (players[t].doingAbility && players[t].whatAbility === "jumpStomp")){
-          players[t].jumpDelta = players[t].jumpForce
+        headY = this.y-this.size/6-this.size*0.1
+        range = this.size*0.2
+
+        var headX_B
+        var headY_B
+        var range_B
+        if(!(players[t].isFlipped)){
+          headX_B = players[t].x+players[t].size*0.65
+        } else{
+          headX_B = players[t].x-players[t].size*0.65
         }
-        if((hitLeftSide || hitRightSide) && (hitTopSide || hitBottomSide)){
-          if(this.doingAbility && (this.whatAbility == "boxRoll" || this.whatAbility == "domeRoll")){
-            this.doingAbility = false
+        headY_B = players[t].y-players[t].size/6-players[t].size*0.1
+        range_B = players[t].size*0.2
+
+        var bodyCollisionState = checkCollision(this.x, this.y-this.size/2-this.size/6, this.size, players[t].x, players[t].y-players[t].size/2-players[t].size/6, players[t].size)
+        var headBodyCollisionState = checkCollision(headX, headY, range, players[t].x, players[t].y-players[t].size/2-players[t].size/6, players[t].size)
+        var headCollisionState = checkCollision(headX, headY, range, headX_B, headY_B, range_B)
+
+        if(bodyCollisionState || headBodyCollisionState || headCollisionState){
+          if(headBodyCollisionState){
+            players[t].HP -= this.maxHP/5
           }
-          if(players[t].doingAbility && (players[t].whatAbility == "boxRoll" || players[t].whatAbility == "domeRoll")){
-            players[t].doingAbility = false
+          if(headCollisionState){
+            players[t].HP -= this.maxHP/5
+            this.HP -= players[t].maxHP/5
           }
-          if(hitLeftSide){
-            if(this.size>players[t].size){
-              if(players[t].x > 0){
-                players[t].x -= this.getSpeed();
-              }
-            } else{
-              if(this.x < mapSize){
-                this.x += (players[t].getSpeed()+this.getSpeed());
-              } 
-            }
-            this.bumpForce = 5
+          if(this.x>players[t].x){
             players[t].bumpForce = -5
-          }else if(hitRightSide){
-            if(this.size>players[t].size){
-              if(players[t].x<mapSize){
-                players[t].x += this.getSpeed();
-              }
-            } else{
-              if(this.x > 0){
-                this.x -= (players[t].getSpeed()+this.getSpeed());
-              }
-            }
-            this.bumpForce = -5
+            this.bumpForce = 5
+          } else{
             players[t].bumpForce = 5
+            this.bumpForce = -5
           }
-          if(!((this.doingAbility && this.whatAbility == "hide") || (players[t].doingAbility && players[t].whatAbility == "hide"))){
-            //we need to check everything for both players as the one first in the array will check first
-            if(!(hitBottomSide && (hitLeftSide || hitRightSide) && (this.doingAbility && this.whatAbility === "jumpStomp")) &&
-              !(hitTopSide && (hitLeftSide || hitRightSide) && (players[t].doingAbility && players[t].whatAbility === "jumpStomp"))){
-              if((this.isFlipped && players[t].isFlipped && hitLeftSide) || (this.isFlipped && !players[t].isFlipped && hitLeftSide) ||
-                (!this.isFlipped && players[t].isFlipped && hitRightSide) || (!this.isFlipped && !players[t].isFlipped && hitRightSide)){
-                players[t].HP-= this.size/5;
-                if(players[t].HP<=0){
-                  this.XP += players[t].XP*0.75;
-                  this.progressXP += players[t].XP*0.75;
-                  this.size = this.getSize();
-                  this.HP += players[t].maxHP/2
-
-                  players[t].die();
-                }
-              }
-              if((!players[t].isFlipped && !this.isFlipped && hitLeftSide) || (!players[t].isFlipped && this.isFlipped && hitLeftSide) ||
-                (players[t].isFlipped && !this.isFlipped && hitRightSide) || (players[t].isFlipped && this.isFlipped && hitRightSide)){
-                this.HP-= players[t].size/5;
-                if(this.HP<=0){
-                  players[t].XP += this.XP*0.75;
-                  players[t].progressXP += this.XP*0.75;
-                  players[t].size = players[t].getSize();
-                  players[t].HP += this.maxHP/2
-
-                  this.die();
-                }
-              }
-            }
-          }
+        }
+        if(players[t].HP<=0){
+          this.XP+=players[t].XP*0.75
+          this.progressXP+=players[t].progressXP*0.75
+          players[t].XP *= 0.25
+          players[t].die()
+        }
+        if(this.HP<=0){
+          players[t].XP+=this.XP*0.75
+          players[t].progressXP+=this.progressXP*0.75
+          this.XP *= 0.25
+          this.die()
         }
       }
     }
   }
   
   this.handlePlantXP = function(){
-    var headX;
-    var headY;
-    var range;
-    if(!this.isFlipped){
-      headX = this.x+this.size*0.65;
+    var headX
+    var headY
+    var range
+    if(!(this.isFlipped)){
+      headX = this.x+this.size*0.65
     } else{
-      headX = this.x-this.size*0.65;
+      headX = this.x-this.size*0.65
     }
-    headY = this.y-this.size*0.44;
+    headY = this.y-this.size*0.35
     range = this.size*0.075;
 
     for(let i in plants){
@@ -699,13 +675,13 @@ var Player = function(id, name, x, y, XP, isDeveloper){
               }
             }
           }
-          for(let b in bots){
-            if(Math.abs(bots[b].x-this.x)<((this.size/2+bots[b].size/2)+(150))){
-              if(bots[b].x>this.x){
-                bots[b].bumpForce = this.size/10;
+          for(let b in ladybugs){
+            if(Math.abs(ladybugs[b].x-this.x)<((this.size/2+ladybugs[b].size/2)+(150))){
+              if(ladybugs[b].x>this.x){
+                ladybugs[b].bumpForce = this.size/10;
               }
-              if(bots[b].x<this.x){
-                bots[b].bumpForce = -(this.size/10);
+              if(ladybugs[b].x<this.x){
+                ladybugs[b].bumpForce = -(this.size/10);
               }
             }
           }
@@ -733,13 +709,13 @@ var Player = function(id, name, x, y, XP, isDeveloper){
               }
             }
           }
-          for(let b in bots){
-            if(Math.abs(bots[b].x-this.x)<((this.size/2+bots[b].size/2)+(150))){
-              if(bots[b].x>this.x){
-                bots[b].bumpForce = this.size/10;
+          for(let b in ladybugs){
+            if(Math.abs(ladybugs[b].x-this.x)<((this.size/2+ladybugs[b].size/2)+(150))){
+              if(ladybugs[b].x>this.x){
+                ladybugs[b].bumpForce = this.size/10;
               }
-              if(bots[b].x<this.x){
-                bots[b].bumpForce = -(this.size/10);
+              if(ladybugs[b].x<this.x){
+                ladybugs[b].bumpForce = -(this.size/10);
               }
             }
           }
@@ -768,13 +744,13 @@ var Player = function(id, name, x, y, XP, isDeveloper){
               }
             }
           }
-          for(let b in bots){
-            if(Math.abs(bots[b].x-this.x)<((this.size/2+bots[b].size/2)+(300))){
-              if(bots[b].x>this.x){
-                bots[b].bumpForce = this.size/8;
+          for(let b in ladybugs){
+            if(Math.abs(ladybugs[b].x-this.x)<((this.size/2+ladybugs[b].size/2)+(300))){
+              if(ladybugs[b].x>this.x){
+                ladybugs[b].bumpForce = this.size/8;
               }
-              if(bots[b].x<this.x){
-                bots[b].bumpForce = -(this.size/8);
+              if(ladybugs[b].x<this.x){
+                ladybugs[b].bumpForce = -(this.size/8);
               }
             }
           }
@@ -809,7 +785,6 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   
   this.die = function(){
     this.x = Math.random()*mapSize;
-    this.XP *= 0.25;
     this.upgrade = 1; //player on first upgrade
     this.targetXP = 20;
     this.size = this.getSize();
@@ -984,7 +959,7 @@ function getAllPlayersInitPack() {
     return initPack;
 }
 
-var Bot = function(id, x, y, XP){
+var Ladybug = function(id, x, y, XP){
   
   this.getSize = function(){
     var modifier = 3000;
@@ -1083,12 +1058,12 @@ var Bot = function(id, x, y, XP){
   return this;
 }
 
-function getAllBotsInitPack() {
-    var botInitPack = [];
-    for(let i in bots) {
-        botInitPack.push(bots[i].getInitPack());
+function getAllladybugsInitPack() {
+    var ladybugInitPack = [];
+    for(let i in ladybugs) {
+        ladybugInitPack.push(ladybugs[i].getInitPack());
     }
-    return botInitPack;
+    return ladybugInitPack;
 }
 
 var Grass = function(id, x, size){
@@ -1238,16 +1213,16 @@ setInterval(() => {
         updatePack.push(players[i].getUpdatePack());
     }
 
-    var botUpdatePack = [];
+    var ladybugUpdatePack = [];
 
-    for(let i in bots) {
-        bots[i].update();
-        botUpdatePack.push(bots[i].getUpdatePack());
+    for(let i in ladybugs) {
+        ladybugs[i].update();
+        ladybugUpdatePack.push(ladybugs[i].getUpdatePack());
     }
   
     io.emit("updatePack", {updatePack});
 
-    io.emit("botUpdatePack", {botUpdatePack});
+    io.emit("ladybugUpdatePack", {ladybugUpdatePack});
 }, 35)
 
 setInterval(() => {
