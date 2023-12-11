@@ -20,14 +20,14 @@ var hideUI, boxRollUI, domeRollUI, spikeRollUI;
 
 var crackImg;
 
-//needs to be changed in BOTH server and client
+//needs to be changed in ladybugH server and client
 var mapSize = 6000;
 
 //loads assets on start of game
 function preload(){
 	shellBox = loadImage('assets/shellBox.png');
 	shellDome = loadImage('assets/shellDome.png');
-  shellSpike = loadImage('assets/shellSpike.png');
+	shellSpike = loadImage('assets/shellSpike.png');
 	// turtle = loadImage('assets/turtle.png');
 	turtleHead = loadImage('assets/turtleHead.png');
 	// turtleJaw = loadImage('assets/turtle.png');
@@ -46,22 +46,28 @@ function preload(){
 
 	ladybug = loadImage('assets/ladybug.png');
 	ladybugFoot = loadImage('assets/ladybugFoot.png');
-  
-  crackImg = loadImage('assets/cracks.png');
-  title = loadImage('assets/title.png');
+
+	ant = loadImage('assets/ant.png');
+	ladybugFoot = loadImage('assets/ladybugFoot.png');
+
+	spider = loadImage('assets/spider.png');
+	ladybugFoot = loadImage('assets/ladybugFoot.png');
+
+	crackImg = loadImage('assets/cracks.png');
+	title = loadImage('assets/title.png');
 }
 
 
 //first thing that is called. Sets up everything
 function setup() {
-    players = [];
+	players = [];
     myId = 0;
 
     grass = [];
 
     plants = [];
 
-    bots = [];
+    ladybugs = [];
   
     cracks = [];
 
@@ -152,11 +158,11 @@ function setup() {
         }
     });
 
-    socket.on("botInitPack", function(data) {
-    	for(let i in data.botInitPack) {
-    		var bot = new Bot(data.botInitPack[i].id, data.botInitPack[i].x, data.botInitPack[i].y, data.botInitPack[i].size);
-    		bots.push(bot);
-    		console.log("New Bot");
+    socket.on("ladybugInitPack", function(data) {
+    	for(let i in data.ladybugInitPack) {
+    		var ladybug = new Ladybug(data.ladybugInitPack[i].id, data.ladybugInitPack[i].x, data.ladybugInitPack[i].y, data.ladybugInitPack[i].size);
+    		ladybugs.push(ladybug);
+    		console.log("New ladybug");
     	}
     });
     
@@ -190,19 +196,19 @@ function setup() {
         }
     });
 
-    socket.on("botUpdatePack", function(data) {
-        for(let i in data.botUpdatePack) {
-            for(let j in bots) {
-            	if(bots[j].id === data.botUpdatePack[i].id) {
-            		bots[j].x = data.botUpdatePack[i].x;
-            		bots[j].y = data.botUpdatePack[i].y;
-            		bots[j].size = data.botUpdatePack[i].size;
-            		bots[j].frontLegUp = data.botUpdatePack[i].frontLegUp;
-            		bots[j].isFlipped = data.botUpdatePack[i].isFlipped;
-            		bots[j].legOffsetX = data.botUpdatePack[i].legOffsetX;
-            		bots[j].legOffsetY = data.botUpdatePack[i].legOffsetY;
-                bots[j].maxHP = data.botUpdatePack[i].maxHP;
-                bots[j].HP = data.botUpdatePack[i].HP;
+    socket.on("ladybugUpdatePack", function(data) {
+        for(let i in data.ladybugUpdatePack) {
+            for(let j in ladybugs) {
+            	if(ladybugs[j].id === data.ladybugUpdatePack[i].id) {
+            		ladybugs[j].x = data.ladybugUpdatePack[i].x;
+            		ladybugs[j].y = data.ladybugUpdatePack[i].y;
+            		ladybugs[j].size = data.ladybugUpdatePack[i].size;
+            		ladybugs[j].frontLegUp = data.ladybugUpdatePack[i].frontLegUp;
+            		ladybugs[j].isFlipped = data.ladybugUpdatePack[i].isFlipped;
+            		ladybugs[j].legOffsetX = data.ladybugUpdatePack[i].legOffsetX;
+            		ladybugs[j].legOffsetY = data.ladybugUpdatePack[i].legOffsetY;
+                	ladybugs[j].maxHP = data.ladybugUpdatePack[i].maxHP;
+                	ladybugs[j].HP = data.ladybugUpdatePack[i].HP;
             	}
             }
         }
@@ -332,10 +338,10 @@ function draw(){
     rankedPlayers[i].drawName();
   }
 
-  for(let i in bots) {
-  	bots[i].draw();
-  	if(bots[i].HP != bots[i].maxHP){
-  		bots[i].drawStatus();
+  for(let i in ladybugs) {
+  	ladybugs[i].draw();
+  	if(ladybugs[i].HP != ladybugs[i].maxHP){
+  		ladybugs[i].drawStatus();
   	}
   }
 
@@ -387,7 +393,7 @@ function startGame(){
 	players = []
 	grass = []
 	plants = []
-	bots = []
+	ladybugs = []
 	cracks = []
 	socket.emit("imReady", {name: playerName});
 	// chatInp = createInput("");
@@ -750,7 +756,7 @@ var Player = function(id, name, x, y, size, isDeveloper){
 	return this;
 }
 
-var Bot = function(id, x, y, size){
+var Ladybug = function(id, x, y, size){
 	this.id = id;
 	this.x = x;
 	this.y = 0;
@@ -1013,7 +1019,7 @@ function mouseClicked() {
 		if(abilityCardsActive){
 	    	for(let i in abilityCards){
 	     		if(((windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55))<mouseX && mouseX<(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55) + windowHeight/7) && (windowHeight*0.4-windowHeight/14)<mouseY && mouseY<(windowHeight*0.4-windowHeight/14 + windowHeight/7))){
-	     			clickedCard = false
+	     			clickedCard = true
 	        		abilityCard = i;
 	        		socket.emit("choseCard", {abilityCard});
 	        		break;
