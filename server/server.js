@@ -60,12 +60,15 @@ io.on('connection', function(socket) {
     })
 
     socket.on("imReady", (data) => { //player joins
+      
+      
         var playerDeveloper
         if(data.name === "?PROCTOR++!"){ //its a secret shhh
           playerDeveloper = true
           data.name = "Proctor - DEV"
         }else if(data.name === "?TUMASAKIII!"){
           playerDeveloper = true
+          player.XP = 0
           data.name = "Tumasakiii - MOD"
         }else if(data.name === "?iAmBigFan!"){
           playerDeveloper = true
@@ -73,8 +76,11 @@ io.on('connection', function(socket) {
         } else{
           playerDeveloper = false
         }
+        
         player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 5, playerDeveloper);
-    
+        if(playerDeveloper){
+          player.XP = 100000
+        }
         players.push(player);
 
         socket.emit("yourId", {id: player.id});
