@@ -772,7 +772,6 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           plants[i].hasFlower = false;
           this.XP+= plants[i].flower.XP;
           this.progressXP+= plants[i].flower.XP;
-          this.size = this.getSize();
 
           // this.HP += (this.maxHP/15); //for eating the flower
 
@@ -785,7 +784,6 @@ var Player = function(id, name, x, y, XP, isDeveloper){
             plants[i].hasLeaf[j] = false;
             this.XP+= plants[i].leaves[j].XP;
             this.progressXP+= plants[i].leaves[j].XP;
-            this.size = this.getSize();
 
             sendPlantUpdate();
           } 
@@ -986,6 +984,8 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   }
 
   this.update = function(){
+    
+    this.size = this.getSize();
     
     for(let i in this.cooldownSet){
       if(this.cooldownSet[i] != 0 && !(this.doingAbility)){
