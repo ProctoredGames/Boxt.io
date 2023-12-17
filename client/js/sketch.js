@@ -76,7 +76,7 @@ function setup() {
     cracks = [];
 
     isSpectating = true;
-    spectateX = Math.random()*biomeSize;
+    spectateX = Math.random()*(biomeSize*3);
     spectateY = 0;
     spectateDir = 1;
     spectateSpeed = 0.5;
