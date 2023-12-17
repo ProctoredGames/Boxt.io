@@ -21,37 +21,37 @@ var hideUI, boxRollUI, domeRollUI, spikeRollUI;
 var crackImg;
 
 //needs to be changed in ladybugH server and client
-var mapSize = 6000;
+var biomeSize = 3000;
 
 //loads assets on start of game
 function preload(){
-	shellBox = loadImage('assets/shellBox.png');
-	shellDome = loadImage('assets/shellDome.png');
-	shellSpike = loadImage('assets/shellSpike.png');
+	shellBoxImg = loadImage('assets/shellBox.png');
+	shellDomeImg = loadImage('assets/shellDome.png');
+	shellSpikeImg = loadImage('assets/shellSpike.png');
 	// turtle = loadImage('assets/turtle.png');
-	turtleHead = loadImage('assets/turtleHead.png');
+	turtleHeadImg = loadImage('assets/turtleHead.png');
 	// turtleJaw = loadImage('assets/turtle.png');
-	turtleFoot = loadImage('assets/turtleFoot.png');
+	turtleFootImg = loadImage('assets/turtleFoot.png');
 	// turtleTail = loadImage('assets/turtle.png');
-	stem = loadImage('assets/stem.png');
-	grassPatch = loadImage('assets/grass.png');
-	leaf = loadImage('assets/leaf.png');
-	flowerWhite = loadImage('assets/flowerWhite.png');
-	flowerYellow = loadImage('assets/flowerYellow.png');
+	stemImg = loadImage('assets/stem.png');
+	grassPatchImg = loadImage('assets/grass.png');
+	leafImg = loadImage('assets/leaf.png');
+	flowerWhiteImg = loadImage('assets/flowerWhite.png');
+	flowerYellowImg = loadImage('assets/flowerYellow.png');
 
-	hideUI = loadImage('assets/UI/hideUI.png');
-	boxRollUI = loadImage('assets/UI/boxRollUI.png');
-	domeRollUI = loadImage('assets/UI/domeRollUI.png');
-	spikeRollUI = loadImage('assets/UI/spikeRollUI.png');
+	hideUIImg = loadImage('assets/UI/hideUI.png');
+	boxRollUIImg = loadImage('assets/UI/boxRollUI.png');
+	domeRollUIImg = loadImage('assets/UI/domeRollUI.png');
+	spikeRollUIImg = loadImage('assets/UI/spikeRollUI.png');
 
-	ladybug = loadImage('assets/ladybug.png');
-	ladybugFoot = loadImage('assets/ladybugFoot.png');
+	ladybugImg = loadImage('assets/ladybug.png');
+	ladybugFootImg = loadImage('assets/ladybugFoot.png');
 
-	ant = loadImage('assets/ant.png');
-	ladybugFoot = loadImage('assets/ladybugFoot.png');
+	antImg = loadImage('assets/ant.png');
+	antFootImg = loadImage('assets/antFoot.png');
 
-	spider = loadImage('assets/spider.png');
-	ladybugFoot = loadImage('assets/ladybugFoot.png');
+	spiderImg = loadImage('assets/spider.png');
+	spiderFootImg = loadImage('assets/spiderFoot.png');
 
 	crackImg = loadImage('assets/cracks.png');
 	title = loadImage('assets/title.png');
@@ -68,11 +68,15 @@ function setup() {
     plants = [];
 
     ladybugs = [];
+
+    ants = [];
+  
+  	spiders = [];
   
     cracks = [];
 
     isSpectating = true;
-    spectateX = Math.random()*mapSize;
+    spectateX = Math.random()*biomeSize;
     spectateY = 0;
     spectateDir = 1;
     spectateSpeed = 0.5;
@@ -166,6 +170,22 @@ function setup() {
     	}
     });
     
+    socket.on("antInitPack", function(data) {
+    	for(let i in data.antInitPack) {
+    		var ant = new Ant(data.antInitPack[i].id, data.antInitPack[i].x, data.antInitPack[i].y, data.antInitPack[i].size);
+    		ants.push(ant);
+    		console.log("New ant");
+    	}
+    });
+
+    socket.on("spiderInitPack", function(data) {
+    	for(let i in data.spiderInitPack) {
+    		var spider = new Spider(data.spiderInitPack[i].id, data.spiderInitPack[i].x, data.spiderInitPack[i].y, data.spiderInitPack[i].size);
+    		spiders.push(spider);
+    		console.log("New spider");
+    	}
+    });
+
     socket.on("crackInitPack", function(data) {
     	for(let i in data.crackInitPack) {
     		var crack = new Crack(data.crackInitPack[i].x, data.crackInitPack[i].y, data.crackInitPack[i].size, data.crackInitPack[i].isFlipped);
@@ -209,6 +229,42 @@ function setup() {
             		ladybugs[j].legOffsetY = data.ladybugUpdatePack[i].legOffsetY;
                 	ladybugs[j].maxHP = data.ladybugUpdatePack[i].maxHP;
                 	ladybugs[j].HP = data.ladybugUpdatePack[i].HP;
+            	}
+            }
+        }
+    });
+
+    socket.on("antUpdatePack", function(data) {
+        for(let i in data.antUpdatePack) {
+            for(let j in ants) {
+            	if(ants[j].id === data.antUpdatePack[i].id) {
+            		ants[j].x = data.antUpdatePack[i].x;
+            		ants[j].y = data.antUpdatePack[i].y;
+            		ants[j].size = data.antUpdatePack[i].size;
+            		ants[j].frontLegUp = data.antUpdatePack[i].frontLegUp;
+            		ants[j].isFlipped = data.antUpdatePack[i].isFlipped;
+            		ants[j].legOffsetX = data.antUpdatePack[i].legOffsetX;
+            		ants[j].legOffsetY = data.antUpdatePack[i].legOffsetY;
+                	ants[j].maxHP = data.antUpdatePack[i].maxHP;
+                	ants[j].HP = data.antUpdatePack[i].HP;
+            	}
+            }
+        }
+    });
+
+    socket.on("spiderUpdatePack", function(data) {
+        for(let i in data.spiderUpdatePack) {
+            for(let j in spiders) {
+            	if(spiders[j].id === data.spiderUpdatePack[i].id) {
+            		spiders[j].x = data.spiderUpdatePack[i].x;
+            		spiders[j].y = data.spiderUpdatePack[i].y;
+            		spiders[j].size = data.spiderUpdatePack[i].size;
+            		spiders[j].frontLegUp = data.spiderUpdatePack[i].frontLegUp;
+            		spiders[j].isFlipped = data.spiderUpdatePack[i].isFlipped;
+            		spiders[j].legOffsetX = data.spiderUpdatePack[i].legOffsetX;
+            		spiders[j].legOffsetY = data.spiderUpdatePack[i].legOffsetY;
+                	spiders[j].maxHP = data.spiderUpdatePack[i].maxHP;
+                	spiders[j].HP = data.spiderUpdatePack[i].HP;
             	}
             }
         }
@@ -290,8 +346,8 @@ function draw(){
 		adjustedX = ((width/2)-spectateX)
 		adjustedY = ((height*0.75+240/3.5)-spectateY)
 		spectateX += spectateSpeed*spectateDir
-		if(spectateX>mapSize){
-			spectateX = mapSize
+		if(spectateX>biomeSize*3){
+			spectateX = biomeSize
 			spectateDir = -1
 		}
 		if(spectateX<0){
@@ -302,10 +358,23 @@ function draw(){
 	}
 	  
 
-  fill(0, 0, 200);
-  rect(0, 0-adjustedY, mapSize, windowHeight);
-  fill(0, 150, 0);
-  rect(0, 0, mapSize, windowHeight-adjustedY);
+  	//desert
+  	fill(0, 0, 220);
+  	rect(0, 0-adjustedY, biomeSize, windowHeight);
+  	fill(231, 183, 68);
+  	rect(0, 0, biomeSize, windowHeight-adjustedY);
+
+  	//plains
+  	fill(0, 0, 180);
+  	rect(biomeSize, 0-adjustedY, biomeSize, windowHeight);
+  	fill(0,150,0);
+  	rect(biomeSize, 0, biomeSize, windowHeight-adjustedY);
+
+  	//jungle
+  	fill(0, 0, 200);
+  	rect(biomeSize+biomeSize, 0-adjustedY, biomeSize, windowHeight);
+  	fill(0,120,0);
+  	rect(biomeSize+biomeSize, 0, biomeSize, windowHeight-adjustedY);
 
   for(let i in grass) {
     grass[i].draw();
@@ -342,6 +411,20 @@ function draw(){
   	ladybugs[i].draw();
   	if(ladybugs[i].HP != ladybugs[i].maxHP){
   		ladybugs[i].drawStatus();
+  	}
+  }
+
+  for(let i in ants) {
+  	ants[i].draw();
+  	if(ants[i].HP != ants[i].maxHP){
+  		ants[i].drawStatus();
+  	}
+  }
+
+  for(let i in spiders) {
+  	spiders[i].draw();
+  	if(spiders[i].HP != spiders[i].maxHP){
+  		spiders[i].drawStatus();
   	}
   }
 
@@ -487,26 +570,26 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		var img;
 		switch(abilityName){
 		case "hide":
-			img = hideUI;
+			img = hideUIImg;
 			break;
 		case "boxRoll":
-			img = boxRollUI;
+			img = boxRollUIImg;
 			break;
 		case "domeRoll":
-			img = domeRollUI;
+			img = domeRollUIImg;
 			break;
 		case "spikeRoll":
-			img = spikeRollUI;
+			img = spikeRollUIImg;
 			break;
 		case "stomp":
-			img = turtleFoot;
+			img = turtleFootImg;
 			break;
 		case "ERROR"://testing
-			img = flowerYellow;
+			img = flowerYellowImg;
 			break;
 		default:
 			//console.log("ability image not found");
-			img = flowerWhite;
+			img = flowerWhiteImg;
 			break;
 		}
 		return img;
@@ -677,13 +760,13 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		var shellImg;
 		switch(this.shellType){
 		case "Box":
-			shellImg = shellBox;
+			shellImg = shellBoxImg;
 			break;
 		case "Dome":
-			shellImg = shellDome;
+			shellImg = shellDomeImg;
 			break;
 		case "Spike":
-			shellImg = shellSpike;
+			shellImg = shellSpikeImg;
 			break;
 		default:
 			console.log("shell not found");
@@ -701,24 +784,24 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		if(!(this.doingAbility && ((this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll") || this.whatAbility === "hide"))){
 			if(this.doingAbility && (this.whatAbility === "stomp" || this.whatAbility === "shockwave")){
 				if(this.frontLegUp){
-					image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
-					image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+					image(turtleFootImg, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
+					image(turtleFootImg, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
 				} else{
-					image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-					image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+					image(turtleFootImg, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+					image(turtleFootImg, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
 				}
 			} else{
 				if(this.doMovement){
 					if(this.frontLegUp){
-						image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
-						image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+						image(turtleFootImg, this.size/4 +this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //front (1)
+						image(turtleFootImg, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
 					} else{
- 						image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-						image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
+ 						image(turtleFootImg, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+						image(turtleFootImg, -this.size/4-this.legOffsetX, -(this.size/5.5), this.size/3, this.size/3); //back (0)
 					}
 				} else{
-					image(turtleFoot, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
-					image(turtleFoot, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
+					image(turtleFootImg, this.size/4 +this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //front (1)
+					image(turtleFootImg, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
 				}
 			}
 
@@ -729,7 +812,7 @@ var Player = function(id, name, x, y, size, isDeveloper){
 			} else{
 				rotate(Math.PI-this.headAngle)
 			}
-			image(turtleHead, this.size*0.05, -(this.size*0.05), this.size*(120/300), this.size/3);
+			image(turtleHeadImg, this.size*0.05, -(this.size*0.05), this.size*(120/300), this.size/3);
 			pop();
 		}
 		push();
@@ -773,9 +856,9 @@ var Ladybug = function(id, x, y, size){
 		push();
 		translate(this.x, this.y);
 		fill(0, 100, 0);
-		rect(-this.size/2, -this.size*1-this.size * 0.30, this.size, this.size * 0.20, 10)
+		rect(-this.size/2, -this.size * 1.00, this.size, this.size * 0.20, 10)
 		fill(0, 250, 0);
-		rect(-this.size/2, -this.size*1-this.size * 0.30, this.size*percentage, this.size * 0.20, 10);
+		rect(-this.size/2, -this.size * 1.00, this.size*percentage, this.size * 0.20, 10);
 		pop();
 	}
 	this.draw = function(){
@@ -788,16 +871,115 @@ var Ladybug = function(id, x, y, size){
 			scale(-1, 1)
 		}
 		if(this.frontLegUp){
-			image(ladybugFoot, this.size*(-1/9+1/4)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
-			image(ladybugFoot, this.size*(-1/9)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
-			image(ladybugFoot, this.size*(-1/9-1/4)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9+1/4)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9-1/4)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
 		} else{
-			image(ladybugFoot, this.size*(-1/9+1/4)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
-			image(ladybugFoot, this.size*(-1/9)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
-			image(ladybugFoot, this.size*(-1/9-1/4)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9+1/4)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9-1/4)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
 		}
 			
-		image(ladybug, 0, -this.size/2-this.size/10, this.size, this.size);
+		image(ladybugImg, 0, -this.size/2-this.size/10, this.size, this.size);
+		pop();
+		pop();
+	}
+	return this;
+}
+
+var Ant = function(id, x, y, size){
+	this.id = id;
+	this.x = x;
+	this.y = 0;
+	this.size = 200;
+	this.isFlipped = true;
+	this.frontLegUp = true;
+	this.legOffsetX = 0;
+	this.legOffsetY = 0;
+	this.drawStatus = function(){
+		var percentage = this.HP/this.maxHP
+		if(this.HP>this.maxHP){
+			percentage = 1.00
+		}
+		push();
+		translate(this.x, this.y);
+		fill(0, 100, 0);
+		rect(-this.size/2, -this.size * 0.90, this.size, this.size * 0.20, 10)
+		fill(0, 250, 0);
+		rect(-this.size/2, -this.size * 0.90, this.size*percentage, this.size * 0.20, 10);
+		pop();
+	}
+	this.draw = function(){
+		push();
+		translate(this.x, this.y);
+		push();
+		if(!(this.isFlipped)){
+			scale(1, 1)
+		} else{
+			scale(-1, 1)
+		}
+		image(antImg, 0, -this.size/2-this.size/10, this.size, this.size);
+		if(this.frontLegUp){
+			image(antFootImg, this.size*(0/9+1/6)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(antFootImg, this.size*(0/9)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(antFootImg, this.size*(0/9-1/6)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+		} else{
+			image(antFootImg, this.size*(0/9+1/6)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(antFootImg, this.size*(0/9)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(antFootImg, this.size*(0/9-1/6)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+		}
+			
+		pop();
+		pop();
+	}
+	return this;
+}
+
+var Spider = function(id, x, y, size){
+	this.id = id;
+	this.x = x;
+	this.y = 0;
+	this.size = 200;
+	this.isFlipped = true;
+	this.frontLegUp = true;
+	this.legOffsetX = 0;
+	this.legOffsetY = 0;
+	this.drawStatus = function(){
+		var percentage = this.HP/this.maxHP
+		if(this.HP>this.maxHP){
+			percentage = 1.00
+		}
+		push();
+		translate(this.x, this.y);
+		fill(0, 100, 0);
+		rect(-this.size/2, -this.size * 1.00, this.size, this.size * 0.20, 10)
+		fill(0, 250, 0);
+		rect(-this.size/2, -this.size * 1.00, this.size*percentage, this.size * 0.20, 10);
+		pop();
+	}
+	this.draw = function(){
+		push();
+		translate(this.x, this.y);
+		push();
+		if(!(this.isFlipped)){
+			scale(1, 1)
+		} else{
+			scale(-1, 1)
+		}
+
+		image(spiderImg, 0, -this.size/2-this.size/10, this.size, this.size);
+		if(this.frontLegUp){
+			image(spiderFootImg, this.size*(-0/9+3/16)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9+1/16)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9-1/16)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9-3/16)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+		} else{
+			image(spiderFootImg, this.size*(-0/9+3/16)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9+1/16)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9-1/16)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9-3/16)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+		}
+			
 		pop();
 		pop();
 	}
@@ -809,7 +991,7 @@ var Grass= function(id, x, size){
 	this.x = x
 	this.size = size
 	this.draw = function(){
-		image(grassPatch, this.x, -this.size/2, this.size*(500/300), this.size);
+		image(grassPatchImg, this.x, -this.size/2, this.size*(500/300), this.size);
 		// console.log("rendered grass")
 	}
 	return this;
@@ -839,7 +1021,7 @@ var Plant = function(id, x, height, hasFlower, hasLeaf){
 		doLeafFlip = !doLeafFlip;
 	}
 	this.draw = function(){
-		image(stem, this.x, -this.height/2, 150, this.height);
+		image(stemImg, this.x, -this.height/2, 150, this.height);
 	}
 	return this;
 }
@@ -851,7 +1033,7 @@ var Flower = function(x,y){
 	this.size = 150;
 
 	this.draw = function(){
-		image(flowerWhite, this.x, this.y, this.size, this.size);
+		image(flowerWhiteImg, this.x, this.y, this.size, this.size);
 	}
 	return this;
 }
@@ -868,11 +1050,11 @@ var Leaf = function(x, y, isFlipped){
 		translate(this.x, this.y);
 		if(!(this.isFlipped)){
 			scale(1, 1)
-			image(leaf, 0, 0, this.size, this.size*3/4);
+			image(leafImg, 0, 0, this.size, this.size*3/4);
 
 		} else{
 			scale(-1, 1)
-			image(leaf, 0, 0, this.size, this.size*3/4);
+			image(leafImg, 0, 0, this.size, this.size*3/4);
 		}
 		pop();
 	}

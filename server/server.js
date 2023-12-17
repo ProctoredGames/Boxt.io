@@ -17,30 +17,50 @@ var players = [];
 var grass = [];
 var plants = [];
 var ladybugs = [];
+var ants = [];
+var spiders = [];
 var cracks = [];
 
 var maxAbilityCards = 4; //probably will want to change this
 
-//needs to be changed in ladybugH server and client
-var mapSize = 6000;
+//needs to be changed in both server and client
+var biomeSize = 3000;
 
 var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 
 server.listen(port, function(){//when the server starts, generate the map with this function
   var plant = {};
-  for(let i = 0; i< (mapSize/250); i++){
-    plant = new Plant(i, Math.random()*mapSize, 250+(Math.random()*300), true, true);
+  for(let i = 0; i< (biomeSize/250); i++){
+    plant = new Plant(i, biomeSize+Math.random()*biomeSize, 250+(Math.random()*300), true, true);
     plants.push(plant);
   }
   var patch = {};
-  for(let i = 0; i< (mapSize/1000); i++){
-    patch = new Grass(i, Math.random()*mapSize, 250+(Math.random()*100));
+  for(let i = 0; i< (biomeSize/1000); i++){
+    patch = new Grass(i, Math.random()*biomeSize, 250+(Math.random()*75));
     grass.push(patch);
   }
+  for(let i = 0; i< (biomeSize/1000); i++){
+    patch = new Grass(i, biomeSize+Math.random()*biomeSize, 250+(Math.random()*100));
+    grass.push(patch);
+  }
+  for(let i = 0; i< (biomeSize/400); i++){
+    patch = new Grass(i, biomeSize+biomeSize+Math.random()*biomeSize, 250+(Math.random()*75));
+    grass.push(patch);
+  }
+  var ant = {};
+  for(let i = 0; i<6; i++){
+    ant = new Ant(i, (Math.random()*biomeSize), 0, 50+(Math.random()*150));
+    ants.push(ant);
+  }
   var ladybug = {};
-  for(let i = 0; i<4; i++){
-    ladybug = new Ladybug(i, (Math.random()*mapSize), 0, (Math.random()*200));
+  for(let i = 0; i<6; i++){
+    ladybug = new Ladybug(i, biomeSize+(Math.random()*biomeSize), 0, 50+(Math.random()*150));
     ladybugs.push(ladybug);
+  }
+  var spider = {};
+  for(let i = 0; i<6; i++){
+    spider = new Spider(i, biomeSize+biomeSize+(Math.random()*biomeSize), 0, 100+(Math.random()*900));
+    spiders.push(spider);
   }
   console.log("Server Started on port "+ port +"!");
 });
@@ -55,20 +75,19 @@ io.on('connection', function(socket) {
       socket.emit("initPack", {initPack: getAllPlayersInitPack()});
       socket.emit("grassInitPack", {grassInitPack: getAllGrassInitPack()});
       socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
-      socket.emit("ladybugInitPack", {ladybugInitPack: getAllladybugsInitPack()});
+      socket.emit("ladybugInitPack", {ladybugInitPack: getAllLadybugsInitPack()});
+      socket.emit("antInitPack", {antInitPack: getAllAntsInitPack()});
+      socket.emit("spiderInitPack", {spiderInitPack: getAllSpidersInitPack()});
       socket.emit("crackInitPack", {crackInitPack: getAllCracksInitPack()});
     })
 
     socket.on("imReady", (data) => { //player joins
-      
-      
         var playerDeveloper
         if(data.name === "?PROCTOR++!"){ //its a secret shhh
           playerDeveloper = true
           data.name = "Proctor - DEV"
         }else if(data.name === "?TUMASAKIII!"){
           playerDeveloper = true
-          player.XP = 0
           data.name = "Tumasakiii - MOD"
         }else if(data.name === "?iAmBigFan!"){
           playerDeveloper = true
@@ -76,11 +95,8 @@ io.on('connection', function(socket) {
         } else{
           playerDeveloper = false
         }
-        
-        player = new Player(socket.id, data.name, (Math.random()*mapSize),0, 5, playerDeveloper);
-        if(playerDeveloper){
-          player.XP = 100000
-        }
+        player = new Player(socket.id, data.name, (Math.random()*(biomeSize*3)),0, 5, playerDeveloper);
+    
         players.push(player);
 
         socket.emit("yourId", {id: player.id});
@@ -88,7 +104,9 @@ io.on('connection', function(socket) {
         socket.emit("initPack", {initPack: getAllPlayersInitPack()}); //sends everyone's data to new player
         socket.emit("grassInitPack", {grassInitPack: getAllGrassInitPack()});
         socket.emit("plantInitPack", {plantInitPack: getAllPlantsInitPack()});
-        socket.emit("ladybugInitPack", {ladybugInitPack: getAllladybugsInitPack()});
+        socket.emit("ladybugInitPack", {ladybugInitPack: getAllLadybugsInitPack()});
+        socket.emit("antInitPack", {antInitPack: getAllAntsInitPack()});
+        socket.emit("spiderInitPack", {spiderInitPack: getAllSpidersInitPack()});
         socket.emit("crackInitPack", {crackInitPack: getAllCracksInitPack()});
     });
 
@@ -303,7 +321,7 @@ io.on('connection', function(socket) {
         player.upgrade = 4;
         break;
       case 4: //Grow Turtle!
-        player.XP += 100
+        player.XP += 50
         player.size = player.getSize();
         player.upgrade = 2;
         break;
@@ -357,6 +375,8 @@ var domeRollAngle = (3.14159*2)/domeRollTime;
 var spikeRollAngle = (3.14159/2)/spikeRollTime;
 
 var alwaysMoveList = ["boxRoll", "domeRoll", "spikeRoll", "boost", "dash", "charge"]
+var endOnCollisionList = ["boxRoll", "domeRoll", "boost", "dash"]
+var weakenOnCollisionList = ["spikeRoll","charge"]
 
 var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
@@ -513,6 +533,51 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   }
   
   this.handleCollisions = function(){
+    for (let b in ants){
+      var headX
+      var headY
+      var range
+      if(!(this.isFlipped)){
+        headX = this.x+this.size*0.65
+      } else{
+        headX = this.x-this.size*0.65
+      }
+      headY = this.y-this.size/6-this.size*0.1
+      range = this.size*0.2
+
+      var bodyCollisionState = checkCollision(this.x, this.y-this.size/2-this.size/6, this.size, ants[b].x, ants[b].y-ants[b].size/2-ants[b].size/6, ants[b].size)
+      var headBodyCollisionState = checkCollision(headX,headY,range,ants[b].x,ants[b].y-ants[b].size/2-ants[b].size/6,ants[b].size)
+
+      if(bodyCollisionState || headBodyCollisionState){
+        if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
+          this.abilityTimer /= 5
+        }
+        if(this.doingAbility && endOnCollisionList.includes(this.whatAbility)){
+          this.doingAbility = false
+        }
+        if(headBodyCollisionState){
+          if(!(this.doingAbility && this.whatAbility == "hide")){
+            ants[b].HP -= this.maxHP/5
+          }
+        }
+        if(this.x>ants[b].x){
+          ants[b].isFlipped = true
+          ants[b].bumpForce = -5
+          this.bumpForce = 5
+        } else{
+          ants[b].isFlipped = false
+          ants[b].bumpForce = 5
+          this.bumpForce = -5
+        }
+      }
+      if(ants[b].HP<=0){
+        this.XP+=ants[b].XP*0.75
+        this.progressXP+=ants[b].XP*0.75
+        this.HP += ants[b].maxHP/2.5
+        ants[b].die()
+      }
+    }
+
     for (let b in ladybugs){
       var headX
       var headY
@@ -529,8 +594,16 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       var headBodyCollisionState = checkCollision(headX,headY,range,ladybugs[b].x,ladybugs[b].y-ladybugs[b].size/2-ladybugs[b].size/6,ladybugs[b].size)
 
       if(bodyCollisionState || headBodyCollisionState){
+        if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
+          this.abilityTimer /= 5
+        }
+        if(this.doingAbility && endOnCollisionList.includes(this.whatAbility)){
+          this.doingAbility = false
+        }
         if(headBodyCollisionState){
-          ladybugs[b].HP -= this.maxHP/5
+          if(!(this.doingAbility && this.whatAbility == "hide")){
+            ladybugs[b].HP -= this.maxHP/5
+          }
         }
         if(this.x>ladybugs[b].x){
           ladybugs[b].isFlipped = true
@@ -547,6 +620,60 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         this.progressXP+=ladybugs[b].XP*0.75
         this.HP += ladybugs[b].maxHP/2.5
         ladybugs[b].die()
+      }
+    }
+    
+    for (let b in spiders){
+      var headX
+      var headY
+      var range
+      if(!(this.isFlipped)){
+        headX = this.x+this.size*0.65
+      } else{
+        headX = this.x-this.size*0.65
+      }
+      headY = this.y-this.size/6-this.size*0.1
+      range = this.size*0.2
+
+      var bodyCollisionState = checkCollision(this.x, this.y-this.size/2-this.size/6, this.size, spiders[b].x, spiders[b].y-spiders[b].size/2-spiders[b].size/6, spiders[b].size)
+      var headBodyCollisionState = checkCollision(headX,headY,range,spiders[b].x,spiders[b].y-spiders[b].size/2-spiders[b].size/6,spiders[b].size)
+
+      if(bodyCollisionState || headBodyCollisionState){
+        if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
+          this.abilityTimer /= 5
+        }
+        if(this.doingAbility && endOnCollisionList.includes(this.whatAbility)){
+          this.doingAbility = false
+        }
+        if(headBodyCollisionState){
+          if(!(this.doingAbility && this.whatAbility == "hide")){
+            spiders[b].HP -= this.maxHP/5
+          }
+        }
+        if(this.x>spiders[b].x){
+          spiders[b].isFlipped = false
+          spiders[b].bumpForce = -5
+          this.bumpForce = 5
+        } else{
+          spiders[b].isFlipped = true
+          spiders[b].bumpForce = 5
+          this.bumpForce = -5
+        }
+        if(!(this.doingAbility && this.whatAbility == "hide")){
+          this.HP -= spiders[b].maxHP/5
+        }
+      }
+      if(spiders[b].HP<=0){
+        this.XP+=spiders[b].XP*0.75
+        this.progressXP+=spiders[b].XP*0.75
+        this.HP += spiders[b].maxHP/2.5
+        spiders[b].die()
+      }
+      if(this.HP<=0){
+        spiders[b].XP+=this.XP*0.75
+        spiders[b].HP += this.maxHP/2.5
+        this.XP *= 0.25
+        this.die()
       }
     }
     for(let t in players){
@@ -578,12 +705,28 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         var headCollisionState = checkCollision(headX, headY, range, headX_B, headY_B, range_B)
 
         if(bodyCollisionState || headBodyCollisionState || headCollisionState){
+          if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
+            this.abilityTimer /= 5
+          }
+          if(this.doingAbility && endOnCollisionList.includes(this.whatAbility)){
+            this.doingAbility = false
+          }
+          if(players[t].doingAbility && weakenOnCollisionList.includes(players[t].whatAbility)){
+            players[t].abilityTimer /= 5
+          }
+          if(players[t].doingAbility && endOnCollisionList.includes(players[t].whatAbility)){
+            players[t].doingAbility = false
+          }
           if(headBodyCollisionState){
-            players[t].HP -= this.maxHP/5
+            if(!(this.doingAbility && this.whatAbility == "hide")){
+              players[t].HP -= this.maxHP/5
+            }
           }
           if(headCollisionState){
-            players[t].HP -= this.maxHP/5
-            this.HP -= players[t].maxHP/5
+            if(!(this.doingAbility && this.whatAbility == "hide") && !(players[t].doingAbility && players[t].whatAbility == "hide")){
+              players[t].HP -= this.maxHP/5
+              this.HP -= players[t].maxHP/5
+            }
           }
           if(this.x>players[t].x){
             players[t].bumpForce = -5
@@ -596,12 +739,14 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         if(players[t].HP<=0){
           this.XP+=players[t].XP*0.75
           this.progressXP+=players[t].progressXP*0.75
+          this.HP += players[t].maxHP/2.5
           players[t].XP *= 0.25
           players[t].die()
         }
         if(this.HP<=0){
           players[t].XP+=this.XP*0.75
           players[t].progressXP+=this.progressXP*0.75
+          players[t].HP += this.maxHP/2.5
           this.XP *= 0.25
           this.die()
         }
@@ -790,7 +935,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   
   
   this.die = function(){
-    this.x = Math.random()*mapSize;
+    this.x = Math.random()*biomeSize;
     this.upgrade = 1; //player on first upgrade
     this.targetXP = 20;
     this.size = this.getSize();
@@ -805,7 +950,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   }
   
   this.reset = function(){
-    this.x = Math.random()*mapSize;
+    this.x = Math.random()*biomeSize;
     this.XP = 5;
     this.progressXP = 5;
     this.upgrade = 1; //player on first upgrade
@@ -863,7 +1008,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       if(Math.abs(this.bumpForce)<0.1){
         this.bumpForce = 0;
       }
-      if(this.x<mapSize && this.x>0){
+      if(this.x<biomeSize && this.x>0){
         this.x+=this.bumpForce;
       }
     }
@@ -894,7 +1039,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
     
     if(this.doMovement){
       if (!(this.isFlipped)) {
-        if(this.x < mapSize){
+        if(this.x < biomeSize*3){
           this.x += this.getSpeed();
         }
       } else{
@@ -965,6 +1110,106 @@ function getAllPlayersInitPack() {
     return initPack;
 }
 
+var Ant= function(id, x, y, XP){
+  
+  this.getSize = function(){
+    var modifier = 3000;
+    var startingSize = 120;
+    var maxSize = 1000;
+    return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
+  }
+  
+  this.id = id;
+  this.x = x;
+  this.y = 0;
+  this.XP = XP
+  this.size = this.getSize();
+  this.bumpForce = 0;
+  this.maxHP = this.size;
+  this.HP = this.size;
+  if((Math.random()*10)>5){
+    this.isFlipped = false;
+  } else{
+    this.isFlipped = true;
+  }
+  this.frontLegUp = 1;
+  this.walkSpeed = 1.15;
+  this.legDirX = 1;
+  this.legOffsetX = 0;
+  this.legOffsetY = 0;
+
+  this.animateLegs = function(){
+    this.legOffsetX+=this.walkSpeed*this.legDirX;
+    if(this.legOffsetX>0.02*this.size){
+      this.legOffsetX=(0.02*this.size);
+      this.legDirX = -1;
+      this.frontLegUp = !this.frontLegUp;
+    }else if(this.legOffsetX<-0.02*this.size){
+      this.legOffsetX=(-0.02*this.size);
+      this.legDirX = 1;
+      this.frontLegUp = !this.frontLegUp;
+    }
+  }
+
+  this.die = function(){
+    this.x = Math.random()*biomeSize;
+    this.XP = Math.random()*200;
+    this.size = this.getSize();
+    this.maxHP = this.size;
+    this.HP = this.maxHP;
+  }
+
+  this.update = function() {
+    if(this.bumpForce != 0){ //main game physics
+      this.bumpForce *= 0.9;
+      if(Math.abs(this.bumpForce)<0.1){
+        this.bumpForce = 0;
+      }
+      if(this.x<(biomeSize) && this.x>0){
+        this.x+=this.bumpForce;
+      }
+    }
+    this.animateLegs();
+    if(!(this.isFlipped)){
+      this.x += this.walkSpeed;
+    } else{
+      this.x -= this.walkSpeed;
+    }
+    if(this.x<0){
+      this.isFlipped = false;
+      this.x = 0
+    }
+    if(this.x>(biomeSize)){
+      this.isFlipped = true;
+      this.x = (biomeSize)
+    }
+  }
+  this.getInitPack = function () {
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+    }
+  }
+  this.getUpdatePack = function () {
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      isFlipped: this.isFlipped,
+      frontLegUp: this.frontLegUp,
+      legOffsetX: this.legOffsetX,
+      legOffsetY: this.legOffsetY,
+      maxHP: this.maxHP,
+      HP: this.HP,
+    }
+  }
+  return this;
+}
+
+
 var Ladybug = function(id, x, y, XP){
   
   this.getSize = function(){
@@ -1007,7 +1252,7 @@ var Ladybug = function(id, x, y, XP){
   }
 
   this.die = function(){
-    this.x = Math.random()*mapSize;
+    this.x = (biomeSize)+Math.random()*biomeSize;
     this.XP = Math.random()*200;
     this.size = this.getSize();
     this.maxHP = this.size;
@@ -1020,7 +1265,7 @@ var Ladybug = function(id, x, y, XP){
       if(Math.abs(this.bumpForce)<0.1){
         this.bumpForce = 0;
       }
-      if(this.x<mapSize && this.x>0){
+      if(this.x<(biomeSize+biomeSize) && this.x>(biomeSize)){
         this.x+=this.bumpForce;
       }
     }
@@ -1030,13 +1275,13 @@ var Ladybug = function(id, x, y, XP){
     } else{
       this.x -= this.walkSpeed;
     }
-    if(this.x<0){
+    if(this.x<(biomeSize)){
       this.isFlipped = false;
-      this.x = 0
+      this.x = (biomeSize)
     }
-    if(this.x>mapSize){
+    if(this.x>(biomeSize+biomeSize)){
       this.isFlipped = true;
-      this.x = mapSize
+      this.x = (biomeSize+biomeSize)
     }
   }
   this.getInitPack = function () {
@@ -1064,12 +1309,128 @@ var Ladybug = function(id, x, y, XP){
   return this;
 }
 
-function getAllladybugsInitPack() {
+
+var Spider = function(id, x, y, XP){
+  
+  this.getSize = function(){
+    var modifier = 3000;
+    var startingSize = 120;
+    var maxSize = 1000;
+    return (((this.XP*(maxSize-startingSize))/(this.XP+modifier))+startingSize);
+  }
+  
+  this.id = id;
+  this.x = x;
+  this.y = 0;
+  this.XP = XP
+  this.size = this.getSize();
+  this.bumpForce = 0;
+  this.maxHP = this.size;
+  this.HP = this.size;
+  if((Math.random()*10)>5){
+    this.isFlipped = false;
+  } else{
+    this.isFlipped = true;
+  }
+  this.frontLegUp = 1;
+  this.walkSpeed = 1.15;
+  this.legDirX = 1;
+  this.legOffsetX = 0;
+  this.legOffsetY = 0;
+
+  this.animateLegs = function(){
+    this.legOffsetX+=this.walkSpeed*this.legDirX;
+    if(this.legOffsetX>0.02*this.size){
+      this.legOffsetX=(0.02*this.size);
+      this.legDirX = -1;
+      this.frontLegUp = !this.frontLegUp;
+    }else if(this.legOffsetX<-0.02*this.size){
+      this.legOffsetX=(-0.02*this.size);
+      this.legDirX = 1;
+      this.frontLegUp = !this.frontLegUp;
+    }
+  }
+
+  this.die = function(){
+    this.x = (biomeSize+biomeSize)+Math.random()*biomeSize;
+    this.XP = Math.random()*200;
+    this.size = this.getSize();
+    this.maxHP = this.size;
+    this.HP = this.maxHP;
+  }
+
+  this.update = function() {
+    if(this.bumpForce != 0){ //main game physics
+      this.bumpForce *= 0.9;
+      if(Math.abs(this.bumpForce)<0.1){
+        this.bumpForce = 0;
+      }
+      if(this.x<(biomeSize+biomeSize+biomeSize) && this.x>(biomeSize+biomeSize)){
+        this.x+=this.bumpForce;
+      }
+    }
+    this.animateLegs();
+    if(!(this.isFlipped)){
+      this.x += this.walkSpeed;
+    } else{
+      this.x -= this.walkSpeed;
+    }
+    if(this.x<(biomeSize+biomeSize)){
+      this.isFlipped = false;
+      this.x = (biomeSize+biomeSize)
+    }
+    if(this.x>(biomeSize+biomeSize+biomeSize)){
+      this.isFlipped = true;
+      this.x = (biomeSize+biomeSize+biomeSize)
+    }
+  }
+  this.getInitPack = function () {
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+    }
+  }
+  this.getUpdatePack = function () {
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      isFlipped: this.isFlipped,
+      frontLegUp: this.frontLegUp,
+      legOffsetX: this.legOffsetX,
+      legOffsetY: this.legOffsetY,
+      maxHP: this.maxHP,
+      HP: this.HP,
+    }
+  }
+  return this;
+}
+
+function getAllLadybugsInitPack() {
     var ladybugInitPack = [];
     for(let i in ladybugs) {
         ladybugInitPack.push(ladybugs[i].getInitPack());
     }
     return ladybugInitPack;
+}
+
+function getAllAntsInitPack() {
+    var antInitPack = [];
+    for(let i in ants) {
+        antInitPack.push(ants[i].getInitPack());
+    }
+    return antInitPack;
+}
+
+function getAllSpidersInitPack() {
+    var spiderInitPack = [];
+    for(let i in spiders) {
+        spiderInitPack.push(spiders[i].getInitPack());
+    }
+    return spiderInitPack;
 }
 
 var Grass = function(id, x, size){
@@ -1225,10 +1586,28 @@ setInterval(() => {
         ladybugs[i].update();
         ladybugUpdatePack.push(ladybugs[i].getUpdatePack());
     }
+
+    var antUpdatePack = [];
+
+    for(let i in ladybugs) {
+        ants[i].update();
+        antUpdatePack.push(ants[i].getUpdatePack());
+    }
+
+    var spiderUpdatePack = [];
+
+    for(let i in spiders) {
+        spiders[i].update();
+        spiderUpdatePack.push(spiders[i].getUpdatePack());
+    }
   
     io.emit("updatePack", {updatePack});
 
     io.emit("ladybugUpdatePack", {ladybugUpdatePack});
+
+    io.emit("antUpdatePack", {antUpdatePack});
+
+    io.emit("spiderUpdatePack", {spiderUpdatePack});
 }, 35)
 
 setInterval(() => {
