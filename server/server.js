@@ -24,7 +24,7 @@ var cracks = [];
 var maxAbilityCards = 4; //probably will want to change this
 
 //needs to be changed in both server and client
-var biomeSize = 3000;
+var biomeSize = 6000;
 
 var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 
@@ -48,17 +48,17 @@ server.listen(port, function(){//when the server starts, generate the map with t
     grass.push(patch);
   }
   var ant = {};
-  for(let i = 0; i<6; i++){
+  for(let i = 0; i<5; i++){
     ant = new Ant(i, (Math.random()*biomeSize), 0, 50+(Math.random()*150));
     ants.push(ant);
   }
   var ladybug = {};
-  for(let i = 0; i<6; i++){
+  for(let i = 0; i<5; i++){
     ladybug = new Ladybug(i, biomeSize+(Math.random()*biomeSize), 0, 50+(Math.random()*150));
     ladybugs.push(ladybug);
   }
   var spider = {};
-  for(let i = 0; i<6; i++){
+  for(let i = 0; i<5; i++){
     spider = new Spider(i, biomeSize+biomeSize+(Math.random()*biomeSize), 0, 100+(Math.random()*900));
     spiders.push(spider);
   }
@@ -772,7 +772,6 @@ var Player = function(id, name, x, y, XP, isDeveloper){
           plants[i].hasFlower = false;
           this.XP+= plants[i].flower.XP;
           this.progressXP+= plants[i].flower.XP;
-          this.size = this.getSize();
 
           // this.HP += (this.maxHP/15); //for eating the flower
 
@@ -785,7 +784,6 @@ var Player = function(id, name, x, y, XP, isDeveloper){
             plants[i].hasLeaf[j] = false;
             this.XP+= plants[i].leaves[j].XP;
             this.progressXP+= plants[i].leaves[j].XP;
-            this.size = this.getSize();
 
             sendPlantUpdate();
           } 
@@ -986,6 +984,8 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   }
 
   this.update = function(){
+    
+    this.size = this.getSize();
     
     for(let i in this.cooldownSet){
       if(this.cooldownSet[i] != 0 && !(this.doingAbility)){
