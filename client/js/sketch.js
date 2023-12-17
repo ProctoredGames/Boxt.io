@@ -348,7 +348,7 @@ function draw(){
         adjustedY = ((height*0.75+240/3.5)-spectateY)
         spectateX += spectateSpeed*spectateDir
         if(spectateX>biomeSize*3){
-            spectateX = biomeSize
+            spectateX = biomeSize*3
             spectateDir = -1
         }
         if(spectateX<0){
