@@ -148,7 +148,7 @@ function setup() {
 
     socket.on("plantInitPack", function(data) {
         for(let i in data.plantInitPack) {
-            var plant = new Plant(data.plantInitPack[i].id, data.plantInitPack[i].x, data.plantInitPack[i].height,data.plantInitPack[i].hasFlower, data.plantInitPack[i].hasLeaf);
+            var plant = new Plant(data.plantInitPack[i].id, data.plantInitPack[i].x, data.plantInitPack[i].height,data.plantInitPack[i].hasFlower, data.plantInitPack[i].hasLeaf, data.plantInitPack[i].flowerColor);
             plants.push(plant);
             console.log("plant init");
         }
@@ -209,6 +209,7 @@ function setup() {
                 if(plants[j].id === data.plantUpdatePack[i].id) {
                     plants[j].hasFlower = data.plantUpdatePack[i].hasFlower;
                     plants[j].hasLeaf = data.plantUpdatePack[i].hasLeaf;
+                    plants[j].flowerColor = data.plantUpdatePack[i].flowerColor;
                 // plants[j].leaves = data.plantUpdatePack[i].leaves;
                     // console.log("updated flower state as "+plants[j].hasFlower)
                 }
@@ -380,7 +381,9 @@ function draw(){
     grass[i].draw();
   }
 
-  for(let i in plants) {
+  var rankedPlants = quickSort(plants);
+
+  for(let i in rankedPlants) {
     plants[i].draw();
     for(let j in plants[i].leaves){
       if(plants[i].hasLeaf[j]){
@@ -388,8 +391,8 @@ function draw(){
       }
     }
   }
-    
-  for(let i in plants) {
+
+  for(let i in rankedPlants) {
     if(plants[i].hasFlower){
       plants[i].flower.draw();
     }
@@ -407,21 +410,27 @@ function draw(){
     rankedPlayers[i].drawName();
   }
 
-  for(let i in ladybugs) {
+  var rankedLadybugs = quickSort(ladybugs);
+
+  for(let i in rankedLadybugs) {
     ladybugs[i].draw();
     if(ladybugs[i].HP != ladybugs[i].maxHP){
         ladybugs[i].drawStatus();
     }
   }
 
-  for(let i in ants) {
+  var rankedAnts = quickSort(ants);
+
+  for(let i in rankedAnts) {
     ants[i].draw();
     if(ants[i].HP != ants[i].maxHP){
         ants[i].drawStatus();
     }
   }
 
-  for(let i in spiders) {
+  var rankedSpiders = quickSort(spiders);
+
+  for(let i in rankedSpiders) {
     spiders[i].draw();
     if(spiders[i].HP != spiders[i].maxHP){
         spiders[i].drawStatus();
@@ -997,12 +1006,13 @@ var Grass= function(id, x, size){
     return this;
 }
 
-var Plant = function(id, x, height, hasFlower, hasLeaf){
+var Plant = function(id, x, height, hasFlower, hasLeaf, flowerColor){
     this.id = id;
     this.x = x;
     this.height = height;
     this.hasFlower = hasFlower;
-    this.flower = new Flower(x, -height);
+    this.flowerColor = flowerColor
+    this.flower = new Flower(x, -height, flowerColor);
     this.hasLeaf = hasLeaf; //important
     this.leaves = [];
     var numLeaves = (height-(height%75))/75;
@@ -1026,14 +1036,20 @@ var Plant = function(id, x, height, hasFlower, hasLeaf){
     return this;
 }
 
-var Flower = function(x,y){
+var Flower = function(x,y, color){
     this.x = x;
     this.y = y;
+    this.color = color;
 
     this.size = 150;
 
     this.draw = function(){
-        image(flowerWhiteImg, this.x, this.y, this.size, this.size);
+        if(this.color == "white"){
+            image(flowerWhiteImg, this.x, this.y, this.size, this.size);
+        } else if(this.color == "yellow"){
+            image(flowerYellowImg, this.x, this.y, this.size, this.size);
+        }
+
     }
     return this;
 }

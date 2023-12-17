@@ -31,20 +31,27 @@ var XPtargets = [5, 20, 30, 40, 70]; //requred to pass 0, 1, 2, 3, 4
 server.listen(port, function(){//when the server starts, generate the map with this function
   var plant = {};
   for(let i = 0; i< (biomeSize/250); i++){
-    plant = new Plant(i, biomeSize+Math.random()*biomeSize, 250+(Math.random()*300), true, true);
+    plant = new Plant(i, biomeSize+Math.random()*biomeSize, 250+(Math.random()*300), true, true, "white");
+    plants.push(plant);
+  }
+  for(let i = 0; i< (biomeSize/300); i++){
+    //we are using i+(biomeSize) so that multiple flowers dont have the same index
+    plant = new Plant(i+(biomeSize), biomeSize+biomeSize+Math.random()*biomeSize, 250+(Math.random()*300), true, true, "yellow");
     plants.push(plant);
   }
   var patch = {};
   for(let i = 0; i< (biomeSize/1000); i++){
-    patch = new Grass(i, Math.random()*biomeSize, 250+(Math.random()*75));
+    patch = new Grass(i, Math.random()*biomeSize, 200+(Math.random()*75));
     grass.push(patch);
   }
   for(let i = 0; i< (biomeSize/1000); i++){
-    patch = new Grass(i, biomeSize+Math.random()*biomeSize, 250+(Math.random()*100));
+    //we are using i+(biomeSize) so that multiple grass dont have the same index
+    patch = new Grass(i+(biomeSize), biomeSize+Math.random()*biomeSize, 250+(Math.random()*100));
     grass.push(patch);
   }
-  for(let i = 0; i< (biomeSize/400); i++){
-    patch = new Grass(i, biomeSize+biomeSize+Math.random()*biomeSize, 250+(Math.random()*75));
+  for(let i = 0; i< (biomeSize/250); i++){
+    //we are using i+(biomeSize*2) so that multiple grass dont have the same index
+    patch = new Grass(i+(biomeSize*2), biomeSize+biomeSize+Math.random()*biomeSize, 250+(Math.random()*100));
     grass.push(patch);
   }
   var ant = {};
@@ -95,7 +102,9 @@ io.on('connection', function(socket) {
         } else{
           playerDeveloper = false
         }
-        player = new Player(socket.id, data.name, (Math.random()*(biomeSize*3)),0, 5, playerDeveloper);
+
+        //the player can initially spawn in any biome EXCEPT jungle (very dangerous biome)
+        player = new Player(socket.id, data.name, (Math.random()*(biomeSize*2)),0, 5, playerDeveloper);
     
         players.push(player);
 
@@ -933,7 +942,11 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   
   
   this.die = function(){
-    this.x = Math.random()*biomeSize;
+    if(this.xp >1500){
+      this.x = Math.random()*biomeSize*3;
+    } else{
+      this.x = Math.random()*biomeSize*2;
+    }
     this.upgrade = 1; //player on first upgrade
     this.targetXP = 20;
     this.size = this.getSize();
@@ -948,7 +961,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
   }
   
   this.reset = function(){
-    this.x = Math.random()*biomeSize;
+    this.x = Math.random()*biomeSize*3;
     this.XP = 5;
     this.progressXP = 5;
     this.upgrade = 1; //player on first upgrade
@@ -1453,12 +1466,13 @@ var Grass = function(id, x, size){
 
 }
 
-var Plant = function(id, x, height, hasFlower, hasLeaf){
+var Plant = function(id, x, height, hasFlower, hasLeaf, flowerColor){
   this.id = id;
   this.x = x;
   this.height = height;
   this.hasFlower = true;
-  this.flower = new Flower(x, -height);
+  this.flowerColor = flowerColor;
+  this.flower = new Flower(x, -height, flowerColor);
   this.hasLeaf = [];
   this.leaves = [];
   var numLeaves = (height-(height%75))/75;
@@ -1485,6 +1499,7 @@ var Plant = function(id, x, height, hasFlower, hasLeaf){
       height: this.height,
       hasFlower: this.hasFlower,
       hasLeaf: this.hasLeaf,
+      flowerColor: this.flowerColor,
     }
   }
   this.getUpdatePack = function () {
@@ -1492,14 +1507,16 @@ var Plant = function(id, x, height, hasFlower, hasLeaf){
       id: this.id,
       hasFlower: this.hasFlower,
       hasLeaf: this.hasLeaf,
+      flowerColor: this.flowerColor,
     }
   }
   return this;
 }
 
-var Flower = function(x,y){
+var Flower = function(x,y, color){
   this.x = x;
   this.y = y;
+  this.color = color
   this.XP = 25+Math.random()*5;
   this.size = 150;
   return this;
