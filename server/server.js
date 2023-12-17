@@ -1008,7 +1008,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       if(Math.abs(this.bumpForce)<0.1){
         this.bumpForce = 0;
       }
-      if(this.x<biomeSize && this.x>0){
+      if(this.x<biomeSize*3 && this.x>0){
         this.x+=this.bumpForce;
       }
     }
