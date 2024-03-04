@@ -358,7 +358,7 @@ function draw(){
         translate(adjustedX, adjustedY);
     }
       
-
+    strokeWeight(0);
     //desert
     fill(0, 0, 220);
     rect(0, 0-adjustedY, biomeSize, windowHeight);
@@ -376,6 +376,47 @@ function draw(){
     rect(biomeSize+biomeSize, 0-adjustedY, biomeSize, windowHeight);
     fill(0,120,0);
     rect(biomeSize+biomeSize, 0, biomeSize, windowHeight-adjustedY);
+
+    strokeWeight(0);
+
+    for (let i = 0; i<((biomeSize*3)/150); i++){
+    	if(i*150<biomeSize){
+    		fill(0, 0, 190);
+    	} else if(i*150<biomeSize*2){
+    		fill(0, 0, 150);
+    	} else if(i*150<biomeSize*3){
+    		fill(0, 0, 170);
+    	}
+    	strokeWeight(0);
+    	rect((i*150)-5,0-adjustedY,10,adjustedY)
+    	strokeWeight(0);
+    }
+
+    for (let b = 0; b<3; b++){
+    	for (let i = 0; i<=((adjustedY)/150); i++){
+    		if(i == 0){
+    			if(b == 0){
+    				fill(231, 153, 68);
+    			} else if(b == 1){
+    				fill(0, 120, 0)
+    			} else if(b == 2){
+    				fill(0, 90, 0)
+    			}
+    		} else{
+    			if(b == 0){
+    				fill(0, 0, 190)
+    			} else if(b == 1){
+    				fill(0, 0, 150)
+    			} else if(b == 2){
+    				fill(0, 0, 170)
+    			}
+    		}
+    		
+    		strokeWeight(0);
+    		rect(b*biomeSize,0-(i*150)-5,biomeSize,10)
+    		strokeWeight(0);
+    	}
+    }
 
   for(let i in grass) {
     grass[i].draw();

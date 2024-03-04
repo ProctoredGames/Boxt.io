@@ -93,12 +93,6 @@ io.on('connection', function(socket) {
         if(data.name === "?PROCTOR++!"){ //its a secret shhh
           playerDeveloper = true
           data.name = "Proctor - DEV"
-        }else if(data.name === "?TUMASAKIII!"){
-          playerDeveloper = true
-          data.name = "Tumasakiii - MOD"
-        }else if(data.name === "?iAmBigFan!"){
-          playerDeveloper = true
-          data.name = "DreamAlt - DEV"
         } else{
           playerDeveloper = false
         }
@@ -143,6 +137,16 @@ io.on('connection', function(socket) {
           break
           case "/reset":
           player.reset()
+          break
+          case "/giveXPme":
+          player.XP += 1000
+          player.progressXP += 1000
+          break
+          case "/giveXPall":
+          for(let i in players){
+            players[i].XP += 1000
+            players[i].progressXP += 1000
+          }
           break
           case "/sizeall 3":
           for(let i in players){
@@ -390,19 +394,15 @@ var weakenOnCollisionList = ["spikeRoll","charge"]
 var names = ["CarlSim", "Bob", "boxt.io", "Noob", ".", "Carl", "KingOfBoxt", "ERROR"];
 
 function checkCollision(objA_X, objA_Y, objA_Size, objB_X, objB_Y, objB_Size){
-
-  var objAHitBTop = (objA_Y+objA_Size/2)>=(objB_Y-objB_Size/2) && (objA_Y+objA_Size/2)<=(objB_Y+objB_Size/2)
-  var objBHitATop = (objB_Y+objB_Size/2)>=(objA_Y-objA_Size/2) && (objB_Y+objB_Size/2)<=(objA_Y+objA_Size/2)
-
-  var objAHitBLeft = (objA_X+objA_Size/2)>=(objB_X-objB_Size/2) && (objA_X+objA_Size/2)<=(objB_X+objB_Size/2)
-  var objBHitALeft = (objB_X+objB_Size/2)>=(objA_X-objA_Size/2) && (objB_X+objB_Size/2)<=(objA_X+objA_Size/2)
-  
-
-  if((objAHitBLeft ||objBHitALeft) && (objAHitBTop ||objBHitATop)){
+  if(
+    objA_X+(objA_Size)/2 >= objB_X-(objB_Size)/2 &&
+    objA_X-(objA_Size)/2 <= objB_X+(objB_Size)/2 &&
+    objA_Y+(objA_Size)/2 >= objB_Y-(objB_Size)/2 &&
+    objA_Y-(objA_Size)/2 <= objB_Y+(objB_Size)/2
+  ){
     return true
-  } else{
-    return false
   }
+  return false
     
 }
 
@@ -554,8 +554,10 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       headY = this.y-this.size/6-this.size*0.1
       range = this.size*0.2
 
-      var bodyCollisionState = checkCollision(this.x, this.y-this.size/2-this.size/6, this.size, ants[b].x, ants[b].y-ants[b].size/2-ants[b].size/6, ants[b].size)
-      var headBodyCollisionState = checkCollision(headX,headY,range,ants[b].x,ants[b].y-ants[b].size/2-ants[b].size/6,ants[b].size)
+      var bodyCollisionState = checkCollision(this.x, this.y-(this.size/2)-(this.size/6), this.size, 
+                          ants[b].x, ants[b].y-(this.size/2)-(this.size/6), ants[b].size)
+      var headBodyCollisionState = checkCollision(headX,headY,range,
+                          ants[b].x,ants[b].y-(this.size/2)-(this.size/6),ants[b].size)
 
       if(bodyCollisionState || headBodyCollisionState){
         if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
@@ -599,8 +601,10 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       headY = this.y-this.size/6-this.size*0.1
       range = this.size*0.2
 
-      var bodyCollisionState = checkCollision(this.x, this.y-this.size/2-this.size/6, this.size, ladybugs[b].x, ladybugs[b].y-ladybugs[b].size/2-ladybugs[b].size/6, ladybugs[b].size)
-      var headBodyCollisionState = checkCollision(headX,headY,range,ladybugs[b].x,ladybugs[b].y-ladybugs[b].size/2-ladybugs[b].size/6,ladybugs[b].size)
+      var bodyCollisionState = checkCollision(this.x, this.y-(this.size/2)-(this.size/6), this.size, 
+                      ladybugs[b].x, ladybugs[b].y-(this.size/2)-(this.size/6), ladybugs[b].size)
+      var headBodyCollisionState = checkCollision(headX,headY-(this.size/2)-(this.size/6),range,
+                      ladybugs[b].x,ladybugs[b].y-(this.size/2)-(this.size/6),ladybugs[b].size)
 
       if(bodyCollisionState || headBodyCollisionState){
         if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
@@ -644,8 +648,10 @@ var Player = function(id, name, x, y, XP, isDeveloper){
       headY = this.y-this.size/6-this.size*0.1
       range = this.size*0.2
 
-      var bodyCollisionState = checkCollision(this.x, this.y-this.size/2-this.size/6, this.size, spiders[b].x, spiders[b].y-spiders[b].size/2-spiders[b].size/6, spiders[b].size)
-      var headBodyCollisionState = checkCollision(headX,headY,range,spiders[b].x,spiders[b].y-spiders[b].size/2-spiders[b].size/6,spiders[b].size)
+      var bodyCollisionState = checkCollision(this.x, this.y-(this.size/2)-(this.size/6), this.size, 
+                            spiders[b].x, spiders[b].y-(this.size/2)-(this.size/6), spiders[b].size)
+      var headBodyCollisionState = checkCollision(headX,headY,range,
+                            spiders[b].x,spiders[b].y-(this.size/2)-(this.size/6),spiders[b].size)
 
       if(bodyCollisionState || headBodyCollisionState){
         if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
@@ -709,8 +715,10 @@ var Player = function(id, name, x, y, XP, isDeveloper){
         headY_B = players[t].y-players[t].size/6-players[t].size*0.1
         range_B = players[t].size*0.2
 
-        var bodyCollisionState = checkCollision(this.x, this.y-this.size/2-this.size/6, this.size, players[t].x, players[t].y-players[t].size/2-players[t].size/6, players[t].size)
-        var headBodyCollisionState = checkCollision(headX, headY, range, players[t].x, players[t].y-players[t].size/2-players[t].size/6, players[t].size)
+        var bodyCollisionState = checkCollision(this.x, this.y-(this.size/2)-(this.size/6), this.size, 
+                      players[t].x, players[t].y-(this.size/2)-(this.size/6), players[t].size)
+        var headBodyCollisionState = checkCollision(headX, headY, range, 
+                      players[t].x, players[t].y-(this.size/2)-(this.size/6), players[t].size)
         var headCollisionState = checkCollision(headX, headY, range, headX_B, headY_B, range_B)
 
         if(bodyCollisionState || headBodyCollisionState || headCollisionState){
@@ -1173,6 +1181,7 @@ var Ant= function(id, x, y, XP){
   }
 
   this.update = function() {
+    this.size = this.getSize();
     if(this.bumpForce != 0){ //main game physics
       this.bumpForce *= 0.9;
       if(Math.abs(this.bumpForce)<0.1){
@@ -1182,6 +1191,14 @@ var Ant= function(id, x, y, XP){
         this.x+=this.bumpForce;
       }
     }
+    
+    var ratio = this.size/this.maxHP;
+    this.maxHP = this.size;
+    this.HP *= ratio; //scales HP with size
+    if((this.HP+0.01)>this.maxHP){
+      this.HP = this.maxHP;
+    }
+    
     this.animateLegs();
     if(!(this.isFlipped)){
       this.x += this.walkSpeed;
@@ -1273,6 +1290,7 @@ var Ladybug = function(id, x, y, XP){
   }
 
   this.update = function() {
+    this.size = this.getSize();
     if(this.bumpForce != 0){ //main game physics
       this.bumpForce *= 0.9;
       if(Math.abs(this.bumpForce)<0.1){
@@ -1282,6 +1300,15 @@ var Ladybug = function(id, x, y, XP){
         this.x+=this.bumpForce;
       }
     }
+    
+    var ratio = this.size/this.maxHP;
+    this.maxHP = this.size;
+    this.HP *= ratio; //scales HP with size
+    if((this.HP+0.01)>this.maxHP){
+      this.HP = this.maxHP;
+    }
+    
+    
     this.animateLegs();
     if(!(this.isFlipped)){
       this.x += this.walkSpeed;
@@ -1373,6 +1400,7 @@ var Spider = function(id, x, y, XP){
   }
 
   this.update = function() {
+    this.size = this.getSize();
     if(this.bumpForce != 0){ //main game physics
       this.bumpForce *= 0.9;
       if(Math.abs(this.bumpForce)<0.1){
@@ -1382,6 +1410,15 @@ var Spider = function(id, x, y, XP){
         this.x+=this.bumpForce;
       }
     }
+    
+    var ratio = this.size/this.maxHP;
+    this.maxHP = this.size;
+    this.HP *= ratio; //scales HP with size
+    if((this.HP+0.01)>this.maxHP){
+      this.HP = this.maxHP;
+    }
+    
+    
     this.animateLegs();
     if(!(this.isFlipped)){
       this.x += this.walkSpeed;
