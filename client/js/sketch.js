@@ -365,6 +365,7 @@ function quickSort(items) {
 function draw(){
 	// scale(0.2);
 	background(0, 0, 250); // it gets a hex/rgb color
+	strokeWeight(0); //no black outlines
 	sendInputData();
 	push(); //starts using player POV in world
 	if(!(isSpectating)){
@@ -406,7 +407,6 @@ function draw(){
 		translate(adjustedX, adjustedY);
 	}
 	  
-	strokeWeight(0);
 	//desert
 	fill(0, 0, 220);
 	rect(0, 0-adjustedY, biomeSize, windowHeight);
@@ -425,7 +425,6 @@ function draw(){
 	fill(0,120,0);
 	rect(biomeSize+biomeSize, 0, biomeSize, windowHeight-adjustedY);
 
-	strokeWeight(0);
 
 	for (let i = 0; i<((biomeSize*3)/150); i++){
 		if(i*150<biomeSize){
@@ -435,9 +434,7 @@ function draw(){
 		} else if(i*150<biomeSize*3){
 			fill(0, 0, 170);
 		}
-		strokeWeight(0);
 		rect((i*150)-5,0-adjustedY,10,adjustedY)
-		strokeWeight(0);
 	}
 
 	for (let b = 0; b<3; b++){
@@ -458,11 +455,8 @@ function draw(){
 				} else if(b == 2){
 					fill(0, 0, 170)
 				}
-			}
-			
-			strokeWeight(0);
+			}		
 			rect(b*biomeSize,0-(i*150)-5,biomeSize,10)
-			strokeWeight(0);
 		}
 	}
 
@@ -572,7 +566,7 @@ function drawLeaderboard(thisIndex){
 
 function drawMinimap(thisIndex){
 	push()
-	strokeWeight(0);
+
 	translate(windowWidth-(biomeSize/50+biomeSize/50+biomeSize/50)-windowHeight*0.04, windowHeight*0.04)
 
 	//background
@@ -603,16 +597,18 @@ function drawMinimap(thisIndex){
 	rect(biomeSize/50+biomeSize/50, 80, biomeSize/(50), 20/2);
 	rect(biomeSize/50+biomeSize/50, 80, biomeSize/(50*2), 20);
 
-	strokeWeight(0);
-
-	fill(255,255,255);
-	circle(players[thisIndex].x/50, 75, 15)
 
 	var rankedPlayers = quickSort(players);
 
-	image(crownImg, rankedPlayers[0].x/50, 72.5, 20, 20)
+	if(players[thisIndex].id === rankedPlayers[0].id){
+		image(crownImg, players[thisIndex].x/50, 72.5, 20, 20)
+	} else{
+		fill(255,255,255);
+		circle(players[thisIndex].x/50, 75, 15)
+		image(crownImg, rankedPlayers[0].x/50, 72.5, 20, 20)
+	}
 
-	text("Version 3.18.24", windowHeight*0.025, 110, windowHeight*0.25, windowHeight*0.03)
+	text("Version 3.18.24", windowHeight*0.025, 112, windowHeight*0.25, windowHeight*0.03)
 
 	pop()
 

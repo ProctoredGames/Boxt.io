@@ -125,88 +125,100 @@ io.on('connection', function(socket) {
 		var thisMessagePack = {}
 		thisMessagePack.message = data.chatMessage
 		thisMessagePack.id = player.id
+
+		var isDevCommand = true //assume this for safety
+
 		if(player.isDeveloper){
 			switch(data.chatMessage){
-				case "/resetall":
+				case "/reset_all":
 				for(let i in players){
 					players[i].reset()
 				}
 				break
-				case "/reset":
+				case "/reset_me":
 				player.reset()
 				break
-				case "/giveXPme":
-				player.XP += 1000
-				player.progressXP += 1000
-				break
-				case "/giveXPall":
+
+				case "/grow_all":
 				for(let i in players){
 					players[i].XP += 1000
 					players[i].progressXP += 1000
 				}
 				break
-				case "/sizeall 3":
+				case "/grow_me":
+				player.XP += 1000
+				player.progressXP += 1000
+				break
+
+				case "/sizeset_all 3":
 				for(let i in players){
 					players[i].XP = Math.random()*300+3000
 					players[i].progressXP = Math.random()*300+3000
 				}
 				break
-				case "/sizeall 2":
+				case "/sizeset_all 2":
 				for(let i in players){
 					players[i].XP = Math.random()*300+1500
 					players[i].progressXP = Math.random()*300+1500
 				}
 				break
-				case "/sizeall 1":
+				case "/sizeset_all 1":
 				for(let i in players){
 					players[i].XP = Math.random()*300+0
 					players[i].progressXP = Math.random()*300+0
 				}
 				break
-				case "/size 3":
+				case "/sizeset_me 3":
 				player.XP = Math.random()*300+3000
 				player.progressXP = Math.random()*300+3000
 				break
-				case "/size 2":
+				case "/sizeset_me 2":
 				player.XP = Math.random()*300+1500
 				player.progressXP = Math.random()*300+1500
 				break
-				case "/size 1":
+				case "/sizeset_me 1":
 				player.XP = Math.random()*300+0
 				player.progressXP = Math.random()*300+0
 				break
 				
-				case "/speedall 3":
+				case "/speedset_all 3":
 				for(let i in players){
 					players[i].walkSpeed = 6
 				}
 				break
-				case "/speedall 2":
+				case "/speedset_all 2":
 				for(let i in players){
 					 players[i].walkSpeed = 3
 				}
 				break
-				case "/speedall 1":
+				case "/speedset_all 1":
 				for(let i in players){
 					 players[i].walkSpeed = 1.5
 				}
 				break
-				case "/speed 3":
+				case "/speedset_me 3":
 				player.walkSpeed = 6
 				break
-				case "/speed 2":
+				case "/speedset_me 2":
 				player.walkSpeed = 3
 				break
-				case "/speed 1":
+				case "/speedset_me 1":
 				player.walkSpeed = 1.5
 				break
-				
+
 				default:
+				isDevCommand = false
 				break
 			}
+		} else{
+			isDevCommand = false
 		}
-		socket.broadcast.emit("getChat", {messagePack: thisMessagePack}); //send to everyone else
-		socket.emit("getChat", {messagePack: thisMessagePack}); //send back to sender
+
+		if(!isDevCommand){
+			socket.broadcast.emit("getChat", {messagePack: thisMessagePack}); //send to everyone else
+			socket.emit("getChat", {messagePack: thisMessagePack}); //send back to sender
+		}
+
 	})
 
 	// socket.on("requestData", (data) => {
@@ -541,13 +553,13 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			} else{
 				headX = this.x-this.size*0.65
 			}
-			headY = this.y-this.size/6-this.size*0.1
+			headY = this.y-this.size*0.1
 			range = this.size*0.2
 
-			var bodyCollisionState = checkCollision(this.x, this.y-(this.size/2)-(this.size/6), this.size, 
-													ants[b].x, ants[b].y-(this.size/2)-(this.size/6), ants[b].size)
-			var headBodyCollisionState = checkCollision(headX,headY,range,
-													ants[b].x,ants[b].y-(this.size/2)-(this.size/6),ants[b].size)
+			var bodyCollisionState = checkCollision(this.x, 0, this.size, 
+													ants[b].x, 0, ants[b].size)
+			var headBodyCollisionState = checkCollision(headX,0,range,
+													ants[b].x,0,ants[b].size)
 
 			if(bodyCollisionState || headBodyCollisionState){
 				if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
@@ -588,13 +600,13 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			} else{
 				headX = this.x-this.size*0.65
 			}
-			headY = this.y-this.size/6-this.size*0.1
+			headY = this.y-this.size*0.1
 			range = this.size*0.2
 
-			var bodyCollisionState = checkCollision(this.x, this.y-(this.size/2)-(this.size/6), this.size, 
-											ladybugs[b].x, ladybugs[b].y-(this.size/2)-(this.size/6), ladybugs[b].size)
-			var headBodyCollisionState = checkCollision(headX,headY-(this.size/2)-(this.size/6),range,
-											ladybugs[b].x,ladybugs[b].y-(this.size/2)-(this.size/6),ladybugs[b].size)
+			var bodyCollisionState = checkCollision(this.x, 0, this.size, 
+											ladybugs[b].x, 0, ladybugs[b].size)
+			var headBodyCollisionState = checkCollision(headX,0,range,
+											ladybugs[b].x,0,ladybugs[b].size)
 
 			if(bodyCollisionState || headBodyCollisionState){
 				if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
@@ -635,13 +647,13 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			} else{
 				headX = this.x-this.size*0.65
 			}
-			headY = this.y-this.size/6-this.size*0.1
+			headY = this.y-this.size*0.1
 			range = this.size*0.2
 
-			var bodyCollisionState = checkCollision(this.x, this.y-(this.size/2)-(this.size/6), this.size, 
-														spiders[b].x, spiders[b].y-(this.size/2)-(this.size/6), spiders[b].size)
-			var headBodyCollisionState = checkCollision(headX,headY,range,
-														spiders[b].x,spiders[b].y-(this.size/2)-(this.size/6),spiders[b].size)
+			var bodyCollisionState = checkCollision(this.x, 0, this.size, 
+														spiders[b].x, 0, spiders[b].size)
+			var headBodyCollisionState = checkCollision(headX,0,range,
+														spiders[b].x,0,spiders[b].size)
 
 			if(bodyCollisionState || headBodyCollisionState){
 				if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
@@ -691,7 +703,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 				} else{
 					headX = this.x-this.size*0.65
 				}
-				headY = this.y-this.size/6-this.size*0.1
+				headY = this.y-this.size*0.1
 				range = this.size*0.2
 
 				var headX_B
@@ -702,14 +714,14 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 				} else{
 					headX_B = players[t].x-players[t].size*0.65
 				}
-				headY_B = players[t].y-players[t].size/6-players[t].size*0.1
+				headY_B = players[t].y-players[t].size*0.1
 				range_B = players[t].size*0.2
 
-				var bodyCollisionState = checkCollision(this.x, this.y-(this.size/2)-(this.size/6), this.size, 
-											players[t].x, players[t].y-(this.size/2)-(this.size/6), players[t].size)
-				var headBodyCollisionState = checkCollision(headX, headY, range, 
-											players[t].x, players[t].y-(this.size/2)-(this.size/6), players[t].size)
-				var headCollisionState = checkCollision(headX, headY, range, headX_B, headY_B, range_B)
+				var bodyCollisionState = checkCollision(this.x, 0, this.size, 
+											players[t].x, 0, players[t].size)
+				var headBodyCollisionState = checkCollision(headX, 0, range, 
+											players[t].x, 0, players[t].size)
+				var headCollisionState = checkCollision(headX, 0, range, headX_B, 0, range_B)
 
 				if(bodyCollisionState || headBodyCollisionState || headCollisionState){
 					if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
