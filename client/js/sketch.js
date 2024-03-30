@@ -301,9 +301,9 @@ function startGame(){
 
 function setName(){
 	playerName = this.value()
-  if (playerName.length > 12) {
-	playerName = playerName.substring(0, 12); // Truncate input if it exceeds the limit
-  }
+  	if (playerName.length > 12) {
+		playerName = playerName.substring(0, 12); // Truncate input if it exceeds the limit
+	}
 }
 
 function setChat(){
@@ -530,19 +530,35 @@ function draw(){
 			}
 		}
 	} else{
+		drawChangelog()
 		image(title, windowWidth/2, windowHeight/2-(windowHeight*0.2), windowHeight/5 * (1300/300), windowHeight/5);
 	}
 }
 
+function drawChangelog(){
+	fill(0,0,0,200);
+	rect(windowHeight*0.03, windowHeight*0.03, windowHeight*0.3, windowHeight*0.35, 20);
+	fill(200, 200, 0);
+	textSize(25);
+	textAlign(CENTER);
+	text("March 29", windowHeight*0.05, (windowHeight*0.05), windowHeight*0.25, windowHeight*0.03)
+	fill(0, 200, 0);
+	textSize(17);
+	textAlign(LEFT);
+	textWrap(WORD);
+	text("• made jumping a base ability! \n • increased base turtle speed! \n  • Optimised and improved the game's code a lot \n • Added changelog \n • Updated leaderboard!", windowHeight*0.05, 
+			(windowHeight*0.09), windowHeight*0.28, windowHeight);
+
+}
 
 function drawLeaderboard(thisIndex){
 	fill(0,0,0,200);
-	rect(windowHeight*0.02, windowHeight*0.02, windowHeight*0.26, windowHeight*0.3, 20);
-	fill(0, 200, 0);
-	textSize(17);
+	rect(windowHeight*0.03, windowHeight*0.03, windowHeight*0.3, windowHeight*0.35, 20);
+	fill(200, 200, 0);
+	textSize(20);
 	textAlign(CENTER);
-	text("LEADERBOARD", windowHeight*0.025, (windowHeight*0.04), windowHeight*0.25, windowHeight*0.03)
-	textSize(15);
+	text("LEADERBOARD", windowHeight*0.055, (windowHeight*0.06), windowHeight*0.25, windowHeight*0.03)
+	textSize(17);
 	textAlign(LEFT);
 
 	var rankedPlayers = quickSort(players);
@@ -552,8 +568,8 @@ function drawLeaderboard(thisIndex){
 		if(rankedPlayers[i].id === my_id){
 			fill(255, 255, 0);
 		}
-		text(count + " | " + rankedPlayers[i].name + " : " + Math.round(rankedPlayers[i].XP), windowHeight*0.04, 
-			(windowHeight*0.075)+(windowHeight*0.03)*i, windowHeight*0.25, windowHeight*0.03);
+		text(count + " | " + rankedPlayers[i].name + " : " + Math.round(rankedPlayers[i].XP), windowHeight*0.05, 
+			(windowHeight*0.1)+(windowHeight*0.03)*i, windowHeight*0.28, windowHeight*0.03);
 		if(rankedPlayers[i].id === my_id){
 			fill(0, 200, 0);
 		}
@@ -608,7 +624,9 @@ function drawMinimap(thisIndex){
 		image(crownImg, rankedPlayers[0].x/50, 72.5, 20, 20)
 	}
 
-	text("Version 3.18.24", windowHeight*0.025, 112, windowHeight*0.25, windowHeight*0.03)
+	fill(0, 200, 0);
+
+	text("Version 3.29.24", windowHeight*0.025, 112, windowHeight*0.25, windowHeight*0.03)
 
 	pop()
 
@@ -1222,30 +1240,35 @@ function keyPressed() {
 			socket.emit("usedAbility", {whatAbility});
 		}
 	}
-  if (key === "Enter"){
-	if(!isSpectating){
-	  typingChat = !typingChat
-	  if(!typingChat){
-		//send the chat
-		var chatMessage = playerChat
-		if(chatMessage === ""){
-		  chatMessage = " "
-		}
-		socket.emit("chatMessage", {chatMessage});
-		removeElements();
-	  } else{
-		playerChat = ""
-		chatInp = createInput("")
-		centerChatInput()
-		chatInp.input(setChat);
-		chatInp.elt.focus();
-		chatInp.style('text-align', 'center');
-		chatInp.style('font-size', '30');
-	  }
-	} else{
-	  startGame()
+
+	if (key === " "){
+		socket.emit("doJump", {key}); //it needs actual variable data so key works fine
 	}
-  }
+
+	if (key === "Enter"){
+		if(!isSpectating){
+			typingChat = !typingChat
+			if(!typingChat){
+				//send the chat
+				var chatMessage = playerChat
+				if(chatMessage === ""){
+					chatMessage = " "
+				}
+				socket.emit("chatMessage", {chatMessage});
+				removeElements();
+			} else{
+				playerChat = ""
+				chatInp = createInput("")
+				centerChatInput()
+				chatInp.input(setChat);
+				chatInp.elt.focus();
+				chatInp.style('text-align', 'center');
+				chatInp.style('font-size', '30');
+			}
+		} else{
+			startGame()
+		}
+	}
 }
 
 function mouseClicked() {
