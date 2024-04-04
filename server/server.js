@@ -216,6 +216,12 @@ io.on('connection', function(socket) {
 				player.cooldownLength[data.whatAbility] = hideCooldown;
 				player.cooldownSet[data.whatAbility] = hideCooldown;
 				break;
+			case "porcupine":
+				player.abilityTimer = porcupineTime;
+				player.cooldownLength[data.whatAbility] = porcupineCooldown;
+				player.cooldownSet[data.whatAbility] = porcupineCooldown;
+				player.shellType = "Porcupine";
+				break;
 			case "stomp":
 				player.abilityTimer = stompTime;
 				player.cooldownLength[data.whatAbility] = stompCooldown;
@@ -280,7 +286,7 @@ io.on('connection', function(socket) {
 
 	socket.on("choseCard", (data) =>{
 		player.abilityChoicesActive = false;
-		if(player.upgrade!=3){
+		if(player.upgrade!=3 && player.abilityChoices[data.abilityCard] != "porcupine"){
 			if(player.upgrade!=4){
 				player.abilityCards.push(player.abilityChoices[data.abilityCard]);
 				player.cooldownLength.push(0);
@@ -335,6 +341,7 @@ var boxRollTime = 40;
 var domeRollTime = 40;
 var spikeRollTime = 10;
 var hideTime = 120;
+var porcupineTime = 100;
 var stompTime = 5;
 var jumpStompTime = 100000; //max ticks turtle can be in air for
 var shockwaveTime = 20;
@@ -351,6 +358,7 @@ var boxRollCooldown = 250;
 var domeRollCooldown = 500;
 var spikeRollCooldown = 280;
 var hideCooldown = 400;
+var porcupineCooldown = 400;
 var stompCooldown = 200;
 var jumpStompCooldown = 300;
 var shockwaveCooldown = 250;
@@ -472,6 +480,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			case "hide":
 				return 0;
 				break;
+			case "porcupine":
+				return 0;
+				break;
 			default: //if not specified, assume regular movement
 				return this.walkSpeed;
 				break;
@@ -490,7 +501,17 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 				break;
 			case 2:
 				this.abilityChoicesActive = true;
-				this.abilityChoices = ["boxRoll", "stomp", "dash"];
+				if(this.x > biomeSize){
+					this.abilityChoices = ["boxRoll", "stomp", "dash"];
+				} else{
+					if(this.abilityCards.length === 1){
+						this.abilityChoices = ["porcupine", "dash"];
+					} else{
+						this.abilityChoices = ["dash"];
+					}
+					
+				}
+				
 				break;
 			case 3:
 				this.abilityChoicesActive = true;
@@ -503,6 +524,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 					break;
 				case "dash":
 					this.abilityChoices = ["charge"];
+					break;
+				case "porcupine":
+					this.abilityChoices = ["bombShell"];
 					break;
 				default:
 					console.log("ability cannot be upgraded");
@@ -540,6 +564,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			var headBodyCollisionState = checkCollision(headX,headY,range,
 													ants[b].x,ants[b].y-ants[b].size*0.5,ants[b].size)
 			if(bodyCollisionState || headBodyCollisionState){
+				if(this.doingAbility && this.whatAbility == "porcupine"){
+					ants[b].HP -= this.maxHP/10
+				}
 				if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
 					this.abilityTimer /= 5
 				}
@@ -547,16 +574,16 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 					this.doingAbility = false
 				}
 				if(headBodyCollisionState){
-					if(!(this.doingAbility && this.whatAbility == "hide")){
+					if(!(this.doingAbility && (this.whatAbility == "hide" || this.whatAbility == "porcupine"))){
 						ants[b].HP -= this.maxHP/5
 					}
 				}
 				if(this.x>ants[b].x){
-					ants[b].isFlipped = true
+					ants[b].isFlipped = false
 					ants[b].bumpForce = -5
 					this.bumpForce = 5
 				} else{
-					ants[b].isFlipped = false
+					ants[b].isFlipped = true
 					ants[b].bumpForce = 5
 					this.bumpForce = -5
 				}
@@ -577,6 +604,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 											ladybugs[b].x,ladybugs[b].y-ladybugs[b].size*0.5,ladybugs[b].size)
 
 			if(bodyCollisionState || headBodyCollisionState){
+				if(this.doingAbility && this.whatAbility == "porcupine"){
+					ladybugs[b].HP -= this.maxHP/10
+				}
 				if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
 					this.abilityTimer /= 5
 				}
@@ -584,7 +614,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 					this.doingAbility = false
 				}
 				if(headBodyCollisionState){
-					if(!(this.doingAbility && this.whatAbility == "hide")){
+					if(!(this.doingAbility && (this.whatAbility == "hide" || this.whatAbility == "porcupine"))){
 						ladybugs[b].HP -= this.maxHP/5
 					}
 				}
@@ -614,6 +644,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 														spiders[b].x,spiders[b].y-spiders[b].size*0.5,spiders[b].size)
 
 			if(bodyCollisionState || headBodyCollisionState){
+				if(this.doingAbility && this.whatAbility == "porcupine"){
+					spiders[b].HP -= this.maxHP/10
+				}
 				if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
 					this.abilityTimer /= 5
 				}
@@ -621,7 +654,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 					this.doingAbility = false
 				}
 				if(headBodyCollisionState){
-					if(!(this.doingAbility && this.whatAbility == "hide")){
+					if(!(this.doingAbility && (this.whatAbility == "hide"|| this.whatAbility == "porcupine"))){
 						spiders[b].HP -= this.maxHP/5
 					}
 				}
@@ -634,7 +667,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 					spiders[b].bumpForce = 5
 					this.bumpForce = -5
 				}
-				if(!(this.doingAbility && this.whatAbility == "hide")){
+				if(!(this.doingAbility && (this.whatAbility == "hide" || this.whatAbility == "porcupine"))){
 					this.HP -= spiders[b].maxHP/5
 				}
 			}
@@ -672,6 +705,12 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 				var headCollisionState = checkCollision(headX, headY, range, headX_B, headY_B, range_B)
 
 				if(bodyCollisionState || headBodyCollisionState || headCollisionState){
+					if(this.doingAbility && this.whatAbility == "porcupine"){
+						players[t].HP -= this.maxHP/10
+					}
+					if(players[t].doingAbility && players[t].whatAbility == "porcupine"){
+						this.HP -= players[t].maxHP/10
+					}
 					if(this.doingAbility && weakenOnCollisionList.includes(this.whatAbility)){
 						this.abilityTimer /= 5
 					}
@@ -685,12 +724,12 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 						players[t].doingAbility = false
 					}
 					if(headBodyCollisionState){
-						if(!(this.doingAbility && this.whatAbility == "hide")){
+						if(!(this.doingAbility && (this.whatAbility == "hide" || this.whatAbility == "porcupine"))){
 							players[t].HP -= this.maxHP/5
 						}
 					}
 					if(headCollisionState){
-						if(!(this.doingAbility && this.whatAbility == "hide") && !(players[t].doingAbility && players[t].whatAbility == "hide")){
+						if(!(this.doingAbility && (this.whatAbility == "hide" || this.whatAbility == "porcupine")) && !(players[t].doingAbility && players[t].whatAbility == "hide" || this.whatAbility == "porcupine")){
 							players[t].HP -= this.maxHP/5
 							this.HP -= players[t].maxHP/5
 						}
@@ -887,6 +926,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			case "hide":
 				//heal in hide
 				this.HP+= this.maxHP/600
+				break;
+			case "porcupine":
+				//do nothing
 				break;
 			default:
 				break;

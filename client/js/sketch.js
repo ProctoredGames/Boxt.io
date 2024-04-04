@@ -28,6 +28,7 @@ function preload(){
 	shellBoxImg = loadImage('assets/shellBox.png');
 	shellDomeImg = loadImage('assets/shellDome.png');
 	shellSpikeImg = loadImage('assets/shellSpike.png');
+	shellPorcupineImg = loadImage('assets/shellPorcupine.png');
 	// turtle = loadImage('assets/turtle.png');
 	turtleHeadImg = loadImage('assets/turtleHead.png');
 	// turtleJaw = loadImage('assets/turtle.png');
@@ -43,6 +44,7 @@ function preload(){
 	boxRollUIImg = loadImage('assets/UI/boxRollUI.png');
 	domeRollUIImg = loadImage('assets/UI/domeRollUI.png');
 	spikeRollUIImg = loadImage('assets/UI/spikeRollUI.png');
+	porcupineUIImg = loadImage('assets/shellPorcupine.png');
 
 	ladybugImg = loadImage('assets/ladybug.png');
 	ladybugFootImg = loadImage('assets/ladybugFoot.png');
@@ -541,13 +543,13 @@ function drawChangelog(){
 	fill(200, 200, 0);
 	textSize(25);
 	textAlign(CENTER);
-	text("March 29", windowHeight*0.05, (windowHeight*0.05), windowHeight*0.25, windowHeight*0.03)
+	text("April 3", windowHeight*0.05, (windowHeight*0.055), windowHeight*0.25, windowHeight*0.03)
 	fill(0, 200, 0);
 	textSize(17);
 	textAlign(LEFT);
 	textWrap(WORD);
-	text("• made jumping a base ability! \n • increased base turtle speed! \n  • Optimised and improved the game's code a lot \n • Added changelog \n • Updated leaderboard!", windowHeight*0.05, 
-			(windowHeight*0.09), windowHeight*0.28, windowHeight);
+	text("• Added Porcupine as a shell upgrade in desert! \n • Increased base turtle speed! \n • Fixed collisions! \n • Optimised and improved the game's code a lot \n • New big updates are in the works...", windowHeight*0.05, 
+			(windowHeight*0.10), windowHeight*0.28, windowHeight);
 
 }
 
@@ -626,7 +628,7 @@ function drawMinimap(thisIndex){
 
 	fill(0, 200, 0);
 
-	text("Version 3.29.24", windowHeight*0.025, 112, windowHeight*0.25, windowHeight*0.03)
+	text("Version 4.03.24", windowHeight*0.025, 112, windowHeight*0.25, windowHeight*0.03)
 
 	pop()
 
@@ -659,7 +661,11 @@ function drawNewAbilityChoices(thisIndex){
 		var totalMenuWidth = ((players[thisIndex].abilityChoices.length)*(windowHeight/7)) + 
 			((players[thisIndex].abilityChoices.length-1)*(windowHeight/55));
 		for(let i in players[thisIndex].abilityChoices){
-			fill(0, 50, 0);
+			if(players[thisIndex].abilityChoices[i] == "porcupine"){
+				fill(115, 90, 35, 200);
+			} else{
+				fill(0, 50, 0, 200);
+			}
 			rect(windowWidth*0.5-(totalMenuWidth/2) + i*(windowHeight/7)+(i)*(windowHeight/55), 
 				windowHeight*0.4-windowHeight/14,windowHeight/7,windowHeight/7, 10);
 
@@ -682,7 +688,11 @@ function drawMyabilityChoices(thisIndex){
 	//weird rendering for right to left card layout
 	var c = 0; //we need to render ui positions forwards
 	for (let i = players[thisIndex].abilityCards.length - 1; i >= 0; i--) { //we read ability list backwards
-		fill(0, 50, 0);
+		if(players[thisIndex].abilityCards[i] == "porcupine"){
+			fill(115, 90, 35, 200);
+		} else{
+			fill(0, 50, 0, 200);
+		}
 		rect(windowWidth*0.95-(c*windowWidth/15+c*windowWidth/225)-windowWidth/15, 
 			windowHeight*0.85-windowWidth/30,windowWidth/15,windowWidth/15, 10);
 
@@ -751,11 +761,36 @@ var Player = function(id, name, x, y, size, isDeveloper){
 	this.legOffsetX = 0;
 	this.shellType = "Box";
 
+	this.getShellImg = function(shellType){
+		var shellImg
+		switch(shellType){
+		case "Box":
+			shellImg = shellBoxImg;
+			break;
+		case "Dome":
+			shellImg = shellDomeImg;
+			break;
+		case "Spike":
+			shellImg = shellSpikeImg;
+			break;
+		case "Porcupine":
+			shellImg = shellPorcupineImg;
+			break;
+		default:
+			console.log("shell not found");
+			break;
+		}
+		return shellImg
+	}
+
 	this.getAbilityImg = function(abilityName){
 		var img;
 		switch(abilityName){
 		case "hide":
-			img = hideUIImg;
+			img = this.getShellImg(this.shellType);
+			break;
+		case "porcupine":
+			img = porcupineUIImg;
 			break;
 		case "boxRoll":
 			img = boxRollUIImg;
@@ -785,6 +820,9 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		switch(abilityName){
 		case "hide":
 			dispName = "Hide"
+			break;
+		case "porcupine":
+			dispName = "Porcupine"
 			break;
 		case "boxRoll":
 			dispName = "Box Roll"
@@ -838,7 +876,7 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		fill(255, 255, 0);
 		textSize(24);
 		textAlign(CENTER);
-		if(!(this.doingAbility && (this.whatAbility === "hide" || this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll"))){
+		if(!(this.doingAbility && (this.whatAbility === "hide" || this.whatAbility === "porcupine" || this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll"))){
 			if(this.isFlipped){
 				text(this.message, -this.size*0.6, -this.size*0.65);
 			} else{
@@ -857,20 +895,8 @@ var Player = function(id, name, x, y, size, isDeveloper){
 
 	this.draw = function(){
 		var shellImg;
-		switch(this.shellType){
-		case "Box":
-			shellImg = shellBoxImg;
-			break;
-		case "Dome":
-			shellImg = shellDomeImg;
-			break;
-		case "Spike":
-			shellImg = shellSpikeImg;
-			break;
-		default:
-			console.log("shell not found");
-			break;
-		}
+
+		shellImg = this.getShellImg(this.shellType)
 
 		push();
 		translate(this.x, this.y);
@@ -880,7 +906,7 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		} else{
 			scale(-1, 1)
 		}
-		if(!(this.doingAbility && ((this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll") || this.whatAbility === "hide"))){
+		if(!(this.doingAbility && ((this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll") || this.whatAbility === "hide" || this.whatAbility === "porcupine"))){
 			if(this.doingAbility && (this.whatAbility === "stomp" || this.whatAbility === "shockwave")){
 				if(this.frontLegUp){
 					image(turtleFootImg, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
@@ -921,7 +947,7 @@ var Player = function(id, name, x, y, size, isDeveloper){
 				translate(0,0+(this.size*0.3));
 				rotate(this.bodyAngle);
 				image(shellImg, 0, -this.size*0.05, this.size, this.size);
-			} else if(this.whatAbility === "hide"){
+			} else if(this.whatAbility === "hide" || this.whatAbility === "porcupine"){
 				translate(0,0+(this.size/6));
 				image(shellImg, 0, 0, this.size, this.size);
 			} else{
