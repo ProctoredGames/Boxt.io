@@ -7,7 +7,7 @@ var Spider = function(id, x, y, size){
 	this.frontLegUp = true;
 	this.legOffsetX = 0;
 	this.legOffsetY = 0;
-	this.drawStatus = function(){
+	this.drawHP = function(){
 		var percentage = this.HP/this.maxHP
 		if(this.HP>this.maxHP){
 			percentage = 1.00

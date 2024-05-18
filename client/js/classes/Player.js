@@ -31,21 +31,26 @@ var Player = function(id, name, x, y, size, isDeveloper){
 	this.doMovement = true;
 	this.frontLegUp = true;
 	this.legOffsetX = 0;
-	this.shellType = "Box";
+
+	this.shellType = "box";
+	this.headType = "box";
 
 	this.getShellImg = function(shellType){
 		var shellImg
 		switch(shellType){
-		case "Box":
+		case "box":
 			shellImg = shellBoxImg;
 			break;
-		case "Dome":
+		case "dome":
 			shellImg = shellDomeImg;
 			break;
-		case "Spike":
+		case "spike":
 			shellImg = shellSpikeImg;
 			break;
-		case "Porcupine":
+		case "porcupine":
+			shellImg = shellPorcupineImg;
+			break;
+		case "bombShell":
 			shellImg = shellPorcupineImg;
 			break;
 		default:
@@ -128,6 +133,20 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		return dispName;
 	}
 
+	this.drawHP = function(){
+		var percentage = this.HP/this.maxHP
+		if(this.HP>this.maxHP){
+			percentage = 1.00
+		}
+		push();
+		translate(this.x, this.y);
+		fill(0, 100, 0);
+		rect(-this.size/2, -this.size * 1.35, this.size, this.size * 0.20, 10)
+		fill(0, 250, 0);
+		rect(-this.size/2, -this.size * 1.35, this.size*percentage, this.size * 0.20, 10);
+		pop();
+	}
+
 	this.drawName = function(){
 		push();
 		translate(this.x, this.y);
@@ -136,9 +155,9 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		} else{
 			fill(0, 0, 0);
 		}
-		textSize(26);
+		textSize(this.size * 0.20);
 		textAlign(CENTER);
-		text(this.name, 0, -this.size*1-this.size * 0.15);
+		text(this.name, 0, -this.size*1.15);
 		pop();
 	}
 

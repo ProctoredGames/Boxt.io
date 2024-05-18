@@ -54,17 +54,17 @@ server.listen(port, function(){//when the server starts, generate the map with t
 		grass.push(patch);
 	}
 	var ant = {};
-	for(let i = 0; i<5; i++){
+	for(let i = 0; i<30; i++){
 		ant = new Ant(i, (Math.random()*biomeSize), 0, 50+(Math.random()*150));
 		ants.push(ant);
 	}
 	var ladybug = {};
-	for(let i = 0; i<5; i++){
+	for(let i = 0; i<30; i++){
 		ladybug = new Ladybug(i, biomeSize+(Math.random()*biomeSize), 0, 50+(Math.random()*150));
 		ladybugs.push(ladybug);
 	}
 	var spider = {};
-	for(let i = 0; i<5; i++){
+	for(let i = 0; i<30; i++){
 		spider = new Spider(i, biomeSize+biomeSize+(Math.random()*biomeSize), 0, 100+(Math.random()*900));
 		spiders.push(spider);
 	}
@@ -73,7 +73,7 @@ server.listen(port, function(){//when the server starts, generate the map with t
 
 io.on('connection', function(socket) {
 	console.log('someone connected, Id: ' + socket.id);
-	var player = {};
+	var player = {}; //this person is the one who connected
 
 
 	//not for beta dev version  
@@ -191,25 +191,22 @@ io.on('connection', function(socket) {
 
 	socket.on("usedAbility", (data) =>{
 
-		if(player.cooldownSet[data.whatAbility] === 0 && !(player.doingAbility && player.whatAbility === "jumpStomp")){
+		if(player.cooldownSet[data.whatAbility] === 0){
 			switch(player.abilityCards[data.whatAbility]){
 			case "boxRoll":
 				player.abilityTimer = boxRollTime;
 				player.cooldownLength[data.whatAbility] = boxRollCooldown;
 				player.cooldownSet[data.whatAbility] = boxRollCooldown;
-				player.shellType = "Box";
 				break;
 			case "domeRoll":
 				player.abilityTimer = domeRollTime;
 				player.cooldownLength[data.whatAbility] = domeRollCooldown;
 				player.cooldownSet[data.whatAbility] = domeRollCooldown;
-				player.shellType = "Dome";
 				break;
 			case "spikeRoll":
 				player.abilityTimer = spikeRollTime;
 				player.cooldownLength[data.whatAbility] = spikeRollCooldown;
 				player.cooldownSet[data.whatAbility] = spikeRollCooldown;
-				player.shellType = "Spike";
 				break;
 			case "hide":
 				player.abilityTimer = hideTime;
@@ -220,17 +217,11 @@ io.on('connection', function(socket) {
 				player.abilityTimer = porcupineTime;
 				player.cooldownLength[data.whatAbility] = porcupineCooldown;
 				player.cooldownSet[data.whatAbility] = porcupineCooldown;
-				player.shellType = "Porcupine";
 				break;
 			case "stomp":
 				player.abilityTimer = stompTime;
 				player.cooldownLength[data.whatAbility] = stompCooldown;
 				player.cooldownSet[data.whatAbility] = stompCooldown;
-				break;
-			case "jumpStomp":
-				player.abilityTimer = jumpStompTime;
-				player.cooldownLength[data.whatAbility] = jumpStompCooldown;
-				player.cooldownSet[data.whatAbility] = jumpStompCooldown;
 				break;
 			case "shockwave":
 				player.abilityTimer = shockwaveTime;
@@ -286,6 +277,7 @@ io.on('connection', function(socket) {
 
 	socket.on("choseCard", (data) =>{
 		player.abilityChoicesActive = false;
+		//porcupine is special because it upgrades HIDE, it doesnt add a new ability
 		if(player.upgrade!=3 && player.abilityChoices[data.abilityCard] != "porcupine"){
 			if(player.upgrade!=4){
 				player.abilityCards.push(player.abilityChoices[data.abilityCard]);
@@ -297,7 +289,28 @@ io.on('connection', function(socket) {
 			player.cooldownLength[player.abilityCards.length-1] = 0;
 			player.cooldownSet[player.abilityCards.length-1] = 0;
 		}
-		player.abilityChoices = []; //stops hacking by making indices worthless after used
+
+		switch(player.abilityChoices[data.abilityCard]){
+		case "boxRoll":
+			player.shellType = "box"
+			break;
+		case "domeRoll":
+			player.shellType = "dome"
+			break;
+		case "spikeRoll":
+			player.shellType = "spike"
+			break;
+		case "porcupine":
+			player.shellType = "porcupine"
+			break;
+		case "bombShell":
+			player.shellType = "bombShell"
+			break;
+		default:
+			break;
+		}
+
+		player.abilityChoices = []; //deters hacking by making indices worthless after used
 		
 		player.progressXP = player.progressXP-player.targetXP;
 		player.targetXP += XPtargets[player.upgrade];
@@ -343,7 +356,6 @@ var spikeRollTime = 10;
 var hideTime = 120;
 var porcupineTime = 100;
 var stompTime = 5;
-var jumpStompTime = 100000; //max ticks turtle can be in air for
 var shockwaveTime = 20;
 var dashTime = 30;
 var chargeTime = 30;
@@ -360,7 +372,6 @@ var spikeRollCooldown = 280;
 var hideCooldown = 400;
 var porcupineCooldown = 400;
 var stompCooldown = 200;
-var jumpStompCooldown = 300;
 var shockwaveCooldown = 250;
 var dashCooldown = 200;
 var chargeCooldown = 250;
@@ -442,10 +453,10 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 	this.doMovement = true;
 	this.headAngle = 0;
 	this.distXToMouse = 0;
-	this.shellType = "Box";
 
-	this.windowWidth;
-	this.windowHeight;
+	this.shellType = "box";
+	this.headType = "box";
+
 
 	this.getSpeed = function(){
 		if(this.doingAbility){
@@ -461,9 +472,6 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 				break;
 			case "stomp":
 				return this.walkSpeed/2;
-				break;
-			case "jumpStomp":
-				return this.walkSpeed*8;
 				break;
 			case "jump":
 				return this.walkSpeed*10;
@@ -494,6 +502,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 
 	this.doUpgrade = function(upgrade){
 		if(!(this.abilityChoicesActive)){
+			this.abilityChoices = []
 			switch(upgrade){
 			case 1:
 				this.abilityChoicesActive = true;
@@ -502,12 +511,14 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			case 2:
 				this.abilityChoicesActive = true;
 				if(this.x > biomeSize){
-					this.abilityChoices = ["boxRoll", "stomp", "dash"];
-				} else{
-					if(this.abilityCards.length === 1){
-						this.abilityChoices = ["porcupine", "dash"];
-					} else{
-						this.abilityChoices = ["dash"];
+					this.abilityChoices = ["stomp", "dash"];
+					if(this.shellType === "box"){
+						this.abilityChoices.push("boxRoll")
+					}
+				} else{ //if you are in the desert
+					this.abilityChoices = ["stomp", "dash"];
+					if(this.shellType === "box"){
+						this.abilityChoices.push("porcupine")
 					}
 					
 				}
@@ -520,7 +531,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 					this.abilityChoices = ["domeRoll", "spikeRoll"];
 					break;
 				case "stomp":
-					this.abilityChoices = ["jumpStomp", "shockwave"];
+					this.abilityChoices = ["shockwave"];
 					break;
 				case "dash":
 					this.abilityChoices = ["charge"];
@@ -820,7 +831,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 					this.legDirX = -1;
 					for(let t in players){
 						if(players[t].id != this.id){
-							if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(150))){
+							if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(this.size))){
 								if(players[t].x>this.x){
 									players[t].bumpForce = this.size/10;
 								}
@@ -831,7 +842,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 						}
 					}
 					for(let b in ladybugs){
-						if(Math.abs(ladybugs[b].x-this.x)<((this.size/2+ladybugs[b].size/2)+(150))){
+						if(Math.abs(ladybugs[b].x-this.x)<((this.size/2+ladybugs[b].size/2)+(this.size))){
 							if(ladybugs[b].x>this.x){
 								ladybugs[b].bumpForce = this.size/10;
 							}
@@ -840,34 +851,23 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 							}
 						}
 					}
-				}
-				break;
-			case "jumpStomp":
-				this.y -= this.jumpDelta;
-				this.jumpDelta -= this.gravity;
-				if(this.y>0){
-					this.y = 0;
-					this.jumpDelta = this.jumpForce;
-					this.abilityTimer = 0;
-					for(let t in players){
-						if(players[t].id != this.id){
-							if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(150))){
-								if(players[t].x>this.x){
-									players[t].bumpForce = this.size/10;
-								}
-								if(players[t].x<this.x){
-									players[t].bumpForce = -(this.size/10);
-								}
+					for(let a in ants){
+						if(Math.abs(ants[a].x-this.x)<((this.size/2+ants[a].size/2)+(this.size))){
+							if(ants[a].x>this.x){
+								ants[a].bumpForce = this.size/10;
+							}
+							if(ants[a].x<this.x){
+								ants[a].bumpForce = -(this.size/10);
 							}
 						}
 					}
-					for(let b in ladybugs){
-						if(Math.abs(ladybugs[b].x-this.x)<((this.size/2+ladybugs[b].size/2)+(150))){
-							if(ladybugs[b].x>this.x){
-								ladybugs[b].bumpForce = this.size/10;
+					for(let s in spiders){
+						if(Math.abs(spiders[s].x-this.x)<((this.size/2+spiders[s].size/2)+(this.size))){
+							if(spiders[s].x>this.x){
+								spiders[s].bumpForce = this.size/10;
 							}
-							if(ladybugs[b].x<this.x){
-								ladybugs[b].bumpForce = -(this.size/10);
+							if(spiders[s].x<this.x){
+								spiders[s].bumpForce = -(this.size/10);
 							}
 						}
 					}
@@ -883,7 +883,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 					this.legDirX = -1;
 					for(let t in players){
 						if(players[t].id != this.id){
-							if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(300))){
+							if(Math.abs(players[t].x-this.x)<((this.size/2+players[t].size/2)+(this.size*1.5))){
 								if(players[t].x>this.x){
 									players[t].bumpForce = this.size/8;
 								}
@@ -894,12 +894,32 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 						}
 					}
 					for(let b in ladybugs){
-						if(Math.abs(ladybugs[b].x-this.x)<((this.size/2+ladybugs[b].size/2)+(300))){
+						if(Math.abs(ladybugs[b].x-this.x)<((this.size/2+ladybugs[b].size/2)+(this.size*1.5))){
 							if(ladybugs[b].x>this.x){
 								ladybugs[b].bumpForce = this.size/8;
 							}
 							if(ladybugs[b].x<this.x){
 								ladybugs[b].bumpForce = -(this.size/8);
+							}
+						}
+					}
+					for(let a in ants){
+						if(Math.abs(ants[a].x-this.x)<((this.size/2+ants[a].size/2)+(this.size*1.5))){
+							if(ants[a].x>this.x){
+								ants[a].bumpForce = this.size/8;
+							}
+							if(ants[a].x<this.x){
+								ants[a].bumpForce = -(this.size/8);
+							}
+						}
+					}
+					for(let s in spiders){
+						if(Math.abs(spiders[s].x-this.x)<((this.size/2+spiders[s].size/2)+(this.size*1.5))){
+							if(spiders[s].x>this.x){
+								spiders[s].bumpForce = this.size/8;
+							}
+							if(spiders[s].x<this.x){
+								spiders[s].bumpForce = -(this.size/8);
 							}
 						}
 					}
@@ -957,7 +977,8 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 		this.abilityCards = [];
 		this.maxHP = this.size;
 		this.HP = this.maxHP;
-		this.shellType = "Box";
+		this.shellType = "box";
+		this.headType = "box";
 	}
 	
 	this.reset = function(){
@@ -974,7 +995,8 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 		this.abilityCards = [];
 		this.maxHP = this.size;
 		this.HP = this.maxHP;
-		this.shellType = "Box";
+		this.shellType = "box";
+		this.headType = "box";
 	}
 	
 	this.animateLegs = function(){
@@ -1046,7 +1068,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			this.playAbility(this.whatAbility);
 		}
 		
-		if(!(this.doingAbility && (this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll"  || this.whatAbility === "jump" || this.whatAbility === "jumpStomp"))){
+		if(!(this.doingAbility && (this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll"  || this.whatAbility === "jump"))){
 			this.handleFlowerXP();
 		}
 		if(1){
@@ -1105,6 +1127,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			frontLegUp: this.frontLegUp,
 			isFlipped: this.isFlipped,
 			shellType: this.shellType,
+			headType: this.headType,
 			headAngle: this.headAngle,
 			bodyAngle : this.bodyAngle,
 			doingAbility: this.doingAbility,
