@@ -135,7 +135,6 @@ function setup() {
 					players[j].shellType = data.updatePack[i].shellType;
 					players[j].headAngle = data.updatePack[i].headAngle;
 					players[j].bodyAngle = data.updatePack[i].bodyAngle;
-					players[j].doingAbility = data.updatePack[i].doingAbility;
 					players[j].whatAbility = data.updatePack[i].whatAbility;
 					players[j].abilityCards = data.updatePack[i].abilityCards;
 					players[j].abilityChoicesActive = data.updatePack[i].abilityChoicesActive;

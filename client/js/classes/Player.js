@@ -18,7 +18,6 @@ var Player = function(id, name, x, y, size, isDeveloper){
 	this.HP = 0;
 	this.maxHP = 0;
 
-	this.doingAbility = false;
 	this.abilityCards = [];
 	this.cooldownLength = [];
 	this.cooldownSet = [];
@@ -167,7 +166,7 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		fill(255, 255, 0);
 		textSize(24);
 		textAlign(CENTER);
-		if(!(this.doingAbility && (this.whatAbility === "hide" || this.whatAbility === "porcupine" || this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll"))){
+		if(!(this.whatAbility === "hide" || this.whatAbility === "porcupine" || this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll")){
 			if(this.isFlipped){
 				text(this.message, -this.size*0.6, -this.size*0.65);
 			} else{
@@ -197,8 +196,8 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		} else{
 			scale(-1, 1)
 		}
-		if(!(this.doingAbility && ((this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll") || this.whatAbility === "hide" || this.whatAbility === "porcupine"))){
-			if(this.doingAbility && (this.whatAbility === "stomp" || this.whatAbility === "shockwave")){
+		if(!((this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll") || this.whatAbility === "hide" || this.whatAbility === "porcupine")){
+			if(this.whatAbility === "stomp" || this.whatAbility === "shockwave"){
 				if(this.frontLegUp){
 					image(turtleFootImg, this.size/4 +this.legOffsetX, -(this.size/4), this.size/3, this.size/3); //front (1)
 					image(turtleFootImg, -this.size/4-this.legOffsetX, -(this.size/6), this.size/3, this.size/3); //back (0)
@@ -233,7 +232,7 @@ var Player = function(id, name, x, y, size, isDeveloper){
 		}
 		push();
 		translate(0, -(this.size/2)-(this.size/6));
-		if(this.doingAbility){
+		if(this.whatAbility != "none"){
 			if(this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll"){
 				translate(0,0+(this.size*0.3));
 				rotate(this.bodyAngle);

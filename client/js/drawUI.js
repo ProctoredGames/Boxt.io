@@ -9,7 +9,7 @@ function drawChangelog(){
 	textSize(windowHeight*0.025);
 	textAlign(LEFT);
 	textWrap(WORD);
-	text("• Reworked shell upgrades, you can now only choose one upgrade path\n• Made all text in game scale with window\n • Retextured the yellow flower in the jungle\n • New biome specific content in the works", windowHeight*0.05, 
+	text("• Reworked shell upgrades, you can now only choose one upgrade path\n• Made all text in game scale with window\n• Retextured the yellow flower in the jungle\n• New biome specific content in the works", windowHeight*0.05, 
 			(windowHeight*0.10), windowHeight*0.28, windowHeight*0.33);
 
 }
