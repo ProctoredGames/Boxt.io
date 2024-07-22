@@ -40,17 +40,17 @@ server.listen(port, function(){//when the server starts, generate the map with t
 	}
 	var patch = {};
 	for(let i = 0; i< (biomeSize/1000); i++){
-		patch = new Grass(i, Math.random()*biomeSize, 200+(Math.random()*75));
+		patch = new Grass(i, Math.random()*biomeSize, 150+(Math.random()*100));
 		grass.push(patch);
 	}
 	for(let i = 0; i< (biomeSize/1000); i++){
 		//we are using i+(biomeSize) so that multiple grass dont have the same index
-		patch = new Grass(i+(biomeSize), biomeSize+Math.random()*biomeSize, 250+(Math.random()*100));
+		patch = new Grass(i+(biomeSize), biomeSize+Math.random()*biomeSize, 150+(Math.random()*100));
 		grass.push(patch);
 	}
 	for(let i = 0; i< (biomeSize/250); i++){
 		//we are using i+(biomeSize*2) so that multiple grass dont have the same index
-		patch = new Grass(i+(biomeSize*2), biomeSize+biomeSize+Math.random()*biomeSize, 250+(Math.random()*100));
+		patch = new Grass(i+(biomeSize*2), biomeSize+biomeSize+Math.random()*biomeSize, 200+(Math.random()*100));
 		grass.push(patch);
 	}
 	var ant = {};
@@ -95,8 +95,8 @@ io.on('connection', function(socket) {
 			playerDeveloper = false
 		}
 
-		//the player can initially spawn in any biome EXCEPT jungle (very dangerous biome)
-		player = new Player(socket.id, data.name, (Math.random()*(biomeSize*2)),0, 5, playerDeveloper);
+
+		player = new Player(socket.id, data.name, biomeSize+Math.random()*biomeSize,0, 5, playerDeveloper);
 
 		players.push(player);
 
@@ -263,6 +263,17 @@ io.on('connection', function(socket) {
 		
 	})
 
+	socket.on("hideBehindGrass", (data) =>{
+		for(let i in grass){
+			if(player.x>grass[i].x-grass[i].size*(500/300)/2 && player.x<grass[i].x+grass[i].size*(500/300)/2 &&
+				player.size< grass[i].size){
+				console.log("toggled player hide")
+				player.hiddenBehindGrass = !player.hiddenBehindGrass
+			}
+		}
+		
+	})
+
 	socket.on("doBoost", (data) =>{
 		if(player.boostCooldown == 0){
 			player.abilityTimer = boostTime
@@ -341,9 +352,9 @@ io.on('connection', function(socket) {
 
 })
 
-//leg has a total range of 20% of the turtle
-var upperLegBound = 0.025;
-var lowerLegBound = -0.075;
+
+var upperLegBound = 0.035;
+var lowerLegBound = -0.03;
 
 var detectionRange = 0.25
 
@@ -411,6 +422,8 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 	this.isDeveloper = isDeveloper;
 	this.x = x;
 	this.y = y;
+
+	this.hiddenBehindGrass = false
 	
 	this.bumpForce = 0;
 
@@ -654,7 +667,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 					this.abilityTimer /= 5
 				}
 				if(endOnCollisionList.includes(this.whatAbility)){
-					this.whatAbility = none
+					this.whatAbility = "none"
 				}
 				if(headBodyCollisionState){
 					if(!(this.whatAbility == "hide"|| this.whatAbility == "porcupine")){
@@ -686,7 +699,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			}
 		}
 		for(let t in players){
-			if(players[t].id != this.id){
+			if(players[t].id != this.id && !players[t].hiddenBehindGrass){
 
 				var headX_B
 				var headY_B
@@ -761,7 +774,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 		}
 	}
 	
-	this.handleFlowerXP = function(){
+	this.handlePlantXP = function(){
 		var headX
 		var headY
 		var range
@@ -953,9 +966,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 	
 	this.die = function(){
 		if(this.xp >1500){
-			this.x = Math.random()*biomeSize*3;
+			this.x = biomeSize+Math.random()*biomeSize;
 		} else{
-			this.x = Math.random()*biomeSize*2;
+			this.x = biomeSize+Math.random()*biomeSize;
 		}
 		this.upgrade = 1; //player on first upgrade
 		this.targetXP = 20;
@@ -972,7 +985,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 	}
 	
 	this.reset = function(){
-		this.x = Math.random()*biomeSize*3;
+		this.x = biomeSize+Math.random()*biomeSize;
 		this.XP = 5;
 		this.progressXP = 5;
 		this.upgrade = 1; //player on first upgrade
@@ -1042,6 +1055,19 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 				this.x+=this.bumpForce;
 			}
 		}
+
+		let foundGrassHidingSpot = false
+
+		for(let i in grass){
+			if(this.x>grass[i].x-grass[i].size*(500/300)/2 && this.x<grass[i].x+grass[i].size*(500/300)/2 &&
+				this.size< grass[i].size){
+				foundGrassHidingSpot = true
+			}
+		}
+
+		if(!(foundGrassHidingSpot)){
+			this.hiddenBehindGrass = false
+		}
 		
 		
 		if(this.distXToMouse<this.size*detectionRange){
@@ -1059,9 +1085,9 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 		}
 		
 		if(!(this.whatAbility === "boxRoll" || this.whatAbility === "domeRoll" || this.whatAbility === "spikeRoll"  || this.whatAbility === "jump")){
-			this.handleFlowerXP();
+			this.handlePlantXP();
 		}
-		if(1){
+		if(!this.hiddenBehindGrass){
 			this.handleCollisions();
 		}
 		
@@ -1114,6 +1140,7 @@ var Player = function(id, name, x, y, XP, isDeveloper){
 			size: this.size,
 			doMovement: this.doMovement,
 			legOffsetX: this.legOffsetX,
+			hiddenBehindGrass: this.hiddenBehindGrass,
 			frontLegUp: this.frontLegUp,
 			isFlipped: this.isFlipped,
 			shellType: this.shellType,

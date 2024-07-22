@@ -30,6 +30,18 @@ var Spider = function(id, x, y, size){
 			scale(-1, 1)
 		}
 
+		if(this.frontLegUp){
+			image(spiderFootImg, this.size*(-0/9+3/16)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9+1/16)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9-1/16)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9-3/16)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+		} else{
+			image(spiderFootImg, this.size*(-0/9+3/16)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9+1/16)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9-1/16)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(spiderFootImg, this.size*(-0/9-3/16)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+		}
+
 		image(spiderImg, 0, -this.size/2-this.size/10, this.size, this.size);
 		if(this.frontLegUp){
 			image(spiderFootImg, this.size*(-0/9+3/16)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);

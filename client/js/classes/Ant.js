@@ -29,6 +29,17 @@ var Ant = function(id, x, y, size){
 		} else{
 			scale(-1, 1)
 		}
+
+		if(this.frontLegUp){
+			image(antFootImg, this.size*(0/9+1/6)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(antFootImg, this.size*(0/9)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(antFootImg, this.size*(0/9-1/6)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+		} else{
+			image(antFootImg, this.size*(0/9+1/6)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(antFootImg, this.size*(0/9)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(antFootImg, this.size*(0/9-1/6)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+		}
+
 		image(antImg, 0, -this.size/2-this.size/10, this.size, this.size);
 		if(this.frontLegUp){
 			image(antFootImg, this.size*(0/9+1/6)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);

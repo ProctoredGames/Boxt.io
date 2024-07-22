@@ -29,6 +29,17 @@ var Ladybug = function(id, x, y, size){
 		} else{
 			scale(-1, 1)
 		}
+
+		if(this.frontLegUp){
+			image(ladybugFootImg, this.size*(-1/9+1/4)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9-1/4)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+		} else{
+			image(ladybugFootImg, this.size*(-1/9+1/4)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9)+this.legOffsetX, -this.size/(6), this.size/3, this.size/3);
+			image(ladybugFootImg, this.size*(-1/9-1/4)-this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
+		}
+
 		if(this.frontLegUp){
 			image(ladybugFootImg, this.size*(-1/9+1/4)+this.legOffsetX, -this.size/(5.5), this.size/3, this.size/3);
 			image(ladybugFootImg, this.size*(-1/9)-this.legOffsetX, -this.size/(6), this.size/3, this.size/3);

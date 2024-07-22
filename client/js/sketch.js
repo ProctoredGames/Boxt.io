@@ -128,6 +128,7 @@ function setup() {
 					players[j].HP = data.updatePack[i].HP;
 					players[j].upgrade = data.updatePack[i].upgrade;
 					players[j].size = data.updatePack[i].size;
+					players[j].hiddenBehindGrass = data.updatePack[i].hiddenBehindGrass;
 					players[j].doMovement = data.updatePack[i].doMovement;
 					players[j].legOffsetX = data.updatePack[i].legOffsetX;
 					players[j].frontLegUp = data.updatePack[i].frontLegUp;
@@ -462,6 +463,18 @@ function draw(){
 		}
 	}
 
+	var rankedPlayers = quickSort(players);
+
+	for(let i in rankedPlayers) {
+		if(rankedPlayers[i].hiddenBehindGrass){
+			rankedPlayers[i].draw();
+			if(rankedPlayers[i].HP < rankedPlayers[i].maxHP){
+				rankedPlayers[i].drawHP();
+			}
+			rankedPlayers[i].drawName();
+		}
+	}
+
 	for(let i in grass) {
 		grass[i].draw();
 	}
@@ -483,15 +496,15 @@ function draw(){
 			//console.log("Flower Drawn!");
 		}
 	}
-  
-	var rankedPlayers = quickSort(players);
 
 	for(let i in rankedPlayers) {
-		rankedPlayers[i].draw();
-		if(rankedPlayers[i].HP < rankedPlayers[i].maxHP){
-			rankedPlayers[i].drawHP();
+		if(!rankedPlayers[i].hiddenBehindGrass){
+			rankedPlayers[i].draw();
+			if(rankedPlayers[i].HP < rankedPlayers[i].maxHP){
+				rankedPlayers[i].drawHP();
+			}
+			rankedPlayers[i].drawName();
 		}
-		rankedPlayers[i].drawName();
 	}
 
 	var rankedLadybugs = quickSort(ladybugs);

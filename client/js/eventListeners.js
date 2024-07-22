@@ -102,6 +102,11 @@ function keyPressed() {
 			startGame()
 		}
 	}
+
+	if (key === "s"){
+		console.log("sent hide request")
+		socket.emit("hideBehindGrass", {key});
+	}
 }
 
 function mouseClicked() {
